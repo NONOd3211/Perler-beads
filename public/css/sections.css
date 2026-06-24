@@ -1,0 +1,565 @@
+/* 拼豆 - 各 section 容器 */
+/* 统一规则：所有功能区块继承 .section-card 样式，不再各自染色 */
+
+.upload-section {
+    margin: 14px 0;
+}
+
+/* === Drop zone：把朴素 <input type=file> 包装成明显的拖拽区域 === */
+.drop-zone {
+    display: block;
+    border: 2px dashed var(--c-cream-border);
+    border-radius: 12px;
+    background: var(--c-cream);
+    padding: 24px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.drop-zone:hover {
+    border-color: var(--c-primary);
+    background-color: #fffcf5;
+}
+
+.drop-zone-icon {
+    font-size: 36px;
+    line-height: 1;
+    margin-bottom: 6px;
+    display: block;
+}
+
+.drop-zone-text {
+    color: var(--c-text-sub);
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.drop-zone-text strong {
+    color: var(--c-primary);
+}
+
+.drop-zone-hint {
+    font-size: 12px;
+    color: var(--c-text-mute);
+    opacity: 0.7;
+}
+
+/* 隐藏原生 file input 但保留可点击（点 drop zone 触发它） */
+#fileInput {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* === 密度（网格尺寸）选项 === */
+.density-section {
+    text-align: left;
+}
+
+.density-option {
+    margin: 0 8px 8px 0;
+    display: inline-block;
+    padding: 8px 14px;
+    background-color: var(--c-cream);
+    border-radius: 8px;
+    border: 2px solid var(--c-cream-border);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+.density-option:hover {
+    border-color: var(--c-primary);
+    background-color: var(--c-primary-soft);
+}
+
+.density-option:has(input:checked) {
+    background-color: var(--c-primary-soft);
+    border-color: var(--c-primary);
+}
+
+.density-option input[type='radio'] {
+    margin-right: 6px;
+    accent-color: var(--c-primary);
+}
+
+/* === 色板选项 === */
+.palette-section {
+    text-align: left;
+}
+
+.palette-option {
+    margin: 0 8px 8px 0;
+    display: inline-block;
+    padding: 8px 14px;
+    background-color: var(--c-cream);
+    border-radius: 8px;
+    border: 2px solid var(--c-cream-border);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+.palette-option:hover {
+    border-color: var(--c-primary);
+    background-color: var(--c-primary-soft);
+}
+
+.palette-option:has(input:checked) {
+    background-color: var(--c-primary-soft);
+    border-color: var(--c-primary);
+}
+
+.palette-option input[type='radio'] {
+    margin-right: 6px;
+    accent-color: var(--c-primary);
+}
+
+/* === 品牌选项 === */
+.brand-section {
+    text-align: left;
+}
+
+.brand-option {
+    margin: 0 8px 8px 0;
+    display: inline-block;
+    padding: 8px 14px;
+    background-color: var(--c-cream);
+    border-radius: 8px;
+    border: 2px solid var(--c-cream-border);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+.brand-option:hover {
+    border-color: var(--c-primary);
+    background-color: var(--c-primary-soft);
+}
+
+.brand-option:has(input:checked) {
+    background-color: var(--c-primary-soft);
+    border-color: var(--c-primary);
+}
+
+.brand-option input[type='radio'] {
+    margin-right: 6px;
+    accent-color: var(--c-primary);
+}
+
+.brand-option.disabled-brand,
+.palette-option.disabled-palette {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+    filter: grayscale(0.5);
+}
+
+/* === 预览区（左右等宽对齐，左右等高） === */
+.preview-section {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    margin: 24px 0;
+    align-items: stretch;
+}
+
+.preview {
+    text-align: center;
+    background-color: white;
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+    border: 2px solid var(--c-cream-border);
+    transition: all 0.2s ease;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    min-width: 0;
+}
+
+/* 预览 stage：包裹 img/canvas + placeholder，永远占满剩余高度 */
+.preview-stage {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 80px;
+    padding: 8px;
+    border-radius: 8px;
+    position: relative;
+}
+
+.preview:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--c-primary);
+}
+
+.preview h3 {
+    color: var(--c-primary);
+    font-family: 'Press Start 2P', cursive;
+    font-size: 14px;
+    margin-bottom: 12px;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* 预览标题行：标题 + 右上角控件（按钮等）两端对齐 */
+.preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+    min-height: 32px;
+}
+
+.preview-header h3 {
+    margin-bottom: 0;
+}
+
+.preview-header .btn-cream {
+    flex-shrink: 0;
+}
+
+/* 让预览区内的图片/canvas 居中且自动伸缩 */
+.preview img,
+.preview canvas {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    border: 2px solid var(--c-cream-border);
+    border-radius: 8px;
+    background: white;
+}
+
+/* canvas 默认是 300x150 占位 — 用 attribute selector 探测 js 是否设置了真实尺寸。
+   只有 width 不是 300（即 js 已经写过 canvas.width）时才显示。 */
+.preview canvas[width='300'] {
+    display: none !important;
+}
+
+/* 空状态占位 — 默认完全不显示，只在有图片/canvas 时显示 img/canvas */
+.preview-placeholder {
+    display: none !important;
+}
+
+/* img 没有 src 时彻底隐藏（避免 alt 文字/破碎图标） */
+.preview img[src=''],
+.preview img:not([src]) {
+    display: none !important;
+}
+
+/* 有有效 src 时，隐藏 placeholder */
+.preview-stage:has(img:not([src=''])) .preview-placeholder {
+    display: none;
+}
+
+/* canvas 有真实尺寸时（js 生成过），隐藏对应 placeholder */
+.preview-stage:has(canvas:not([width='300'])) .preview-placeholder {
+    display: none;
+}
+
+/* 空的 .info 元素（没文本）直接隐藏，避免空方块 */
+.info:empty {
+    display: none;
+}
+
+/* === 底部按钮区 === */
+.button-section {
+    text-align: center;
+    margin: 24px 0 8px 0;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* === 处理模式 + 合并阈值 + 去背景（统一卡） === */
+.pixelation-section,
+.merge-section,
+.bg-removal-section {
+    text-align: left;
+}
+
+/* 处理模式：select */
+.pixelation-section select {
+    width: 100%;
+    max-width: 320px;
+    padding: 8px 12px;
+    font-family: inherit;
+    font-size: 14px;
+    border: 2px solid var(--c-cream-border);
+    border-radius: 8px;
+    background-color: var(--c-cream);
+    color: var(--c-text);
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+}
+
+.pixelation-section select:hover,
+.pixelation-section select:focus {
+    border-color: var(--c-primary);
+    outline: none;
+}
+
+.merge-section small {
+    color: var(--c-text-mute);
+    font-size: 12px;
+    display: block;
+    margin-top: 6px;
+    line-height: 1.4;
+}
+
+/* === 去背景区 === */
+.bg-removal-section {
+    background: var(--c-cream);
+}
+
+.bg-removal-section h3 {
+    margin-top: 0;
+}
+
+.bg-toggle-row,
+.bg-slider-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 0;
+    font-size: 13px;
+    color: var(--c-text);
+    flex-wrap: wrap;
+}
+
+.bg-slider-row input[type='range'] {
+    flex: 1;
+    min-width: 120px;
+}
+
+.bg-mode-group {
+    border: 1px solid var(--c-cream-border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin: 8px 0;
+    background: white;
+}
+
+.bg-mode-group legend {
+    font-size: 12px;
+    color: var(--c-text-sub);
+    padding: 0 4px;
+}
+
+.bg-mode-group label {
+    display: inline-flex;
+    align-items: center;
+    margin: 4px 12px 4px 0;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.bg-mode-group input[type='radio'] {
+    margin-right: 4px;
+    accent-color: var(--c-primary);
+}
+
+.bg-manual-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+
+.bg-manual-controls button {
+    padding: 5px 12px;
+    border: 1px solid var(--c-cream-border);
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--c-text);
+    font-family: inherit;
+    font-weight: normal;
+    margin: 0;
+    box-shadow: none;
+}
+
+.bg-manual-controls button:hover:not(:disabled) {
+    background: var(--c-primary-soft);
+    border-color: var(--c-primary);
+    transform: none;
+}
+
+.bg-manual-controls button:disabled {
+    background: #ececec;
+    color: #b5b5b5;
+    cursor: not-allowed;
+    background-image: none;
+}
+
+.bg-hint {
+    font-size: 11px;
+    color: var(--c-text-mute);
+    margin-left: auto;
+}
+
+/* === 高级设置折叠 (details/summary) === */
+.advanced-settings {
+    margin: 14px 0;
+    border: 2px solid var(--c-cream-border);
+    border-radius: 12px;
+    background: white;
+}
+
+.advanced-settings > summary {
+    cursor: pointer;
+    padding: 14px 20px;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 13px;
+    color: var(--c-primary);
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+}
+
+.advanced-settings > summary::-webkit-details-marker {
+    display: none;
+}
+
+.advanced-settings > summary::after {
+    content: '▾';
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--c-primary);
+    transition: transform 0.2s ease;
+}
+
+.advanced-settings[open] > summary::after {
+    transform: rotate(180deg);
+}
+
+.advanced-settings > summary:hover {
+    background-color: var(--c-primary-soft);
+    border-radius: 10px 10px 0 0;
+}
+
+.advanced-settings[open] > summary {
+    border-bottom: 1px solid var(--c-cream-border);
+}
+
+.advanced-settings > .advanced-body {
+    padding: 8px 16px 16px 16px;
+}
+
+/* 高级设置内部嵌套的卡片：去掉自身背景和边框，只用底部分割线 */
+.advanced-settings > .advanced-body > .section-card {
+    background: var(--c-cream);
+    border: none;
+    padding: 14px 16px;
+    margin: 8px 0;
+    box-shadow: none;
+}
+
+.advanced-settings > .advanced-body > .section-card + .section-card {
+    border-top: 1px dashed var(--c-cream-border);
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
+/* === 导出用隐藏 canvas === */
+.bg-export-canvas {
+    display: none !important;
+}
+
+/* === 响应式 override（必须在文件末尾，源顺序晚于 base.css 媒体查询） === */
+
+/* Pad 竖屏 / 桌面小屏 (≤1024px) */
+@media (max-width: 1024px) {
+    .preview-section {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+    }
+}
+
+/* 手机 + 小 pad (≤768px) — 单列纵向堆叠 */
+@media (max-width: 768px) {
+    .preview-section {
+        grid-template-columns: 1fr;
+        gap: 14px;
+        margin: 16px 0;
+    }
+    .preview-stage {
+        min-height: 60px;
+    }
+    .preview-header {
+        flex-wrap: wrap;
+        gap: 8px;
+        min-height: auto;
+    }
+    .preview-header h3 {
+        font-size: 12px;
+    }
+    .button-section {
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 18px 0 6px 0;
+    }
+    .button-section button {
+        flex: 1 1 calc(50% - 14px);
+        min-width: 130px;
+    }
+    .drop-zone {
+        padding: 28px 16px;
+    }
+    .drop-zone-icon {
+        font-size: 38px;
+    }
+    .drop-zone-text {
+        font-size: 13px;
+    }
+    .drop-zone-hint {
+        font-size: 11px;
+    }
+    .advanced-settings > summary {
+        padding: 12px 14px;
+        font-size: 12px;
+    }
+    .pixelation-section select {
+        max-width: 100%;
+        min-height: 40px;
+        font-size: 13px;
+    }
+    .brand-option,
+    .palette-option {
+        padding: 10px 12px;
+        font-size: 13px;
+        min-height: 40px;
+    }
+}
+
+/* 手机竖屏 (≤480px) */
+@media (max-width: 480px) {
+    .preview-header h3 {
+        font-size: 11px;
+        flex: 1 1 100%;
+    }
+    .preview-header .btn-cream {
+        font-size: 11px;
+        padding: 6px 10px;
+        min-height: 32px;
+    }
+    .button-section button {
+        flex: 1 1 100%;
+    }
+}

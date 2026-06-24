@@ -1,0 +1,26 @@
+{
+    "name": "pindou",
+    "type": "module",
+    "version": "1.0.0",
+    "private": true,
+    "description": "Pixel art editor (Canvas-based) with a focus on transparent grid and bead-diagramming workflows.",
+    "engines": {
+        "node": ">=18"
+    },
+    "scripts": {
+        "lint": "eslint .",
+        "format": "prettier --write .",
+        "format:check": "prettier --check .",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "dev": "http-server public -p 8080 -c-1"
+    },
+    "devDependencies": {
+        "eslint": "^9.0.0",
+        "globals": "^15.0.0",
+        "prettier": "^3.0.0",
+        "vitest": "^2.0.0",
+        "jsdom": "^25.0.0",
+        "http-server": "^14.0.0"
+    }
+}

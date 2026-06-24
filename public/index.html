@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>拼豆图纸自动生成工具</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Comic+Neue:wght@400;700&display=swap">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/sections.css">
+    <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+    <div class="container">
+        <h1>拼豆图纸生成工具</h1>
+        <p class="subtitle">上传图片 · 一键生成拼豆图纸 · 附带配色清单</p>
+
+        <div class="instructions">
+            <h3>使用说明</h3>
+            <ol>
+                <li>点击或拖拽上传你的照片（透明 PNG 效果最佳）</li>
+                <li>选择拼豆板尺寸、品牌、色板</li>
+                <li>系统自动生成拼豆图纸</li>
+                <li>满意后下载图纸 + 配色清单</li>
+            </ol>
+        </div>
+
+        <div class="section-card density-section">
+            <h3 class="section-title"><span class="icon">🔲</span>网格尺寸</h3>
+            <label class="density-option">
+                <input type="radio" name="density" value="52" checked>
+                52×52 标准格
+            </label>
+            <label class="density-option">
+                <input type="radio" name="density" value="104">
+                104×104 精细格
+            </label>
+        </div>
+
+        <div class="section-card brand-section">
+            <h3 class="section-title"><span class="icon">🏷️</span>拼豆品牌</h3>
+            <label class="brand-option">
+                <input type="radio" name="brand" value="MARD" checked>
+                MARD
+            </label>
+            <label class="brand-option">
+                <input type="radio" name="brand" value="COCO">
+                COCO
+            </label>
+            <label class="brand-option">
+                <input type="radio" name="brand" value="漫漫">
+                漫漫
+            </label>
+            <label class="brand-option">
+                <input type="radio" name="brand" value="盼盼">
+                盼盼
+            </label>
+            <label class="brand-option">
+                <input type="radio" name="brand" value="咪小窝">
+                咪小窝
+            </label>
+        </div>
+
+        <div class="section-card pixelation-section">
+            <h3 class="section-title"><span class="icon">⚙️</span>处理模式</h3>
+            <select id="pixelationModeSelect">
+                <option value="dominant" selected>卡通 (主色)</option>
+                <option value="alpha-weighted">真实 (α-加权)</option>
+            </select>
+            <p class="section-hint">卡通模式适合海报/插画，α-加权模式适合写实照片。</p>
+        </div>
+
+        <details class="advanced-settings">
+            <summary>高级设置 · 去背景 / 颜色合并</summary>
+            <div class="advanced-body">
+                <div class="section-card bg-removal-section" style="margin: 0 0 12px 0;">
+                    <h3 class="section-title"><span class="icon">🪄</span>去背景</h3>
+
+                    <label class="bg-toggle-row">
+                        <input type="checkbox" id="bgRemovalEnabled">
+                        开启去背景
+                    </label>
+
+                    <fieldset id="bgModeGroup" class="bg-mode-group" disabled>
+                        <legend>识别模式</legend>
+                        <label><input type="radio" name="bgMode" value="auto" checked> 边角采样(自动)</label>
+                        <label><input type="radio" name="bgMode" value="manual"> 点击选取</label>
+                    </fieldset>
+
+                    <label class="bg-slider-row">
+                        判定阈值: <span id="bgThresholdValue">12</span>
+                        <input type="range" id="bgThresholdSlider" min="0" max="50" step="1" value="12" disabled>
+                    </label>
+
+                    <label class="bg-slider-row" id="sampleMatchThrRow" hidden>
+                        采样阈值: <span id="sampleMatchThrValue">12</span>
+                        <input type="range" id="sampleMatchThrSlider" min="0" max="50" step="1" value="12" disabled>
+                    </label>
+
+                    <div id="bgManualControls" class="bg-manual-controls" hidden>
+                        <button type="button" id="bgUndoBtn" disabled>撤销上一次</button>
+                        <button type="button" id="bgClearBtn" disabled>清空点击</button>
+                        <span class="bg-hint">在右侧拼豆图纸上点击背景 cell</span>
+                    </div>
+                </div>
+
+                <div class="section-card merge-section" style="margin: 0;">
+                    <h3 class="section-title"><span class="icon">🔀</span>颜色合并阈值: <span id="mergeValue">0</span></h3>
+                    <input type="range" id="mergeSlider" min="0" max="100" step="1" value="0">
+                    <small>值越大色块越纯净，细节越少。0 = 不合并(只靠去斑清理噪声)。</small>
+                </div>
+            </div>
+        </details>
+
+        <div class="section-card palette-section">
+            <h3 class="section-title"><span class="icon">🎨</span>色板</h3>
+            <label class="palette-option">
+                <input type="radio" name="palette" value="221" checked>
+                221 色 精选色系
+            </label>
+            <label class="palette-option">
+                <input type="radio" name="palette" value="291">
+                291 色 完整色系
+            </label>
+        </div>
+
+        <div class="section-card upload-section">
+            <h3 class="section-title"><span class="icon">📤</span>上传图片</h3>
+            <label class="drop-zone" id="dropZone" for="fileInput" tabindex="0">
+                <span class="drop-zone-icon">📷</span>
+                <div class="drop-zone-text"><strong>点击选择</strong> 或将图片拖拽到这里</div>
+                <div class="drop-zone-hint">支持 JPG / PNG · 透明 PNG 效果最佳</div>
+                <input type="file" id="fileInput" accept="image/*">
+            </label>
+            <p id="fileInfo"></p>
+        </div>
+
+        <div class="preview-section">
+            <div class="preview">
+                <h3><span class="icon">🖼️</span>原始图片</h3>
+                <div class="preview-stage">
+                    <img id="originalImage" src="" alt="原始图片">
+                    <div class="preview-placeholder">📷</div>
+                </div>
+                <div class="info" id="originalInfo"></div>
+            </div>
+            <div class="preview">
+                <div class="preview-header">
+                    <h3><span class="icon">🧩</span>拼豆网格图纸</h3>
+                    <button id="fusedPreviewZoomButton" class="btn-cream" disabled>🔍 放大查看</button>
+                </div>
+                <div class="preview-stage">
+                    <canvas id="perlerCanvas" width="300" height="150"></canvas>
+                    <div class="preview-placeholder">🧩</div>
+                </div>
+                <canvas id="exportCanvas" class="bg-export-canvas" hidden></canvas>
+                <div class="info" id="perlerInfo"></div>
+            </div>
+        </div>
+
+        <div class="button-section">
+            <button id="downloadButton" disabled>下载图纸</button>
+            <button id="colorListButton" disabled>配色清单</button>
+            <button id="resetButton" disabled>重新上传</button>
+        </div>
+        <div id="loadingOverlay" class="modal-overlay">
+            <div class="modal-panel modal-panel--loading">
+                <div class="loading-title">生成中...</div>
+                <div id="loadingProgress" class="loading-text">请稍候</div>
+            </div>
+        </div>
+        <div id="colorListModal" class="modal-overlay">
+            <div class="modal-panel modal-panel--color-list">
+                <h3 class="modal-title">配色清单</h3>
+                <div id="colorListContent"></div>
+                <div class="modal-actions">
+                    <button id="closeColorList" class="btn-cream">关闭</button>
+                </div>
+            </div>
+        </div>
+        <div id="editorModal" class="modal-overlay modal-overlay--editor">
+            <div class="modal-panel modal-panel--editor">
+                <h3 class="modal-title modal-title--sm">选色</h3>
+                <div class="editor-current-row">当前色:<span id="editorCurrentCode" class="editor-current-code"></span> <span id="editorCurrentSwatch" class="editor-current-swatch"></span></div>
+                <div class="modal-section-label">── 相似色 ──</div>
+                <div id="editorSimilarGrid" class="color-grid"></div>
+                <div class="modal-section-label">── 手动输入色号 ──</div>
+                <div class="input-row">
+                    <input type="text" id="editorCodeInput" class="input-cream" placeholder="如 A04">
+                    <button id="editorCodeSubmit" class="btn-cream btn-cream--sm">确认</button>
+                </div>
+                <div id="editorCodeError" class="editor-error">色号不存在</div>
+                <div class="modal-section-label">── 最近色号 ──</div>
+                <div id="editorRecentGrid" class="color-grid"></div>
+                <div class="text-center">
+                    <button id="editorCancel" class="btn-cream">取消</button>
+                </div>
+            </div>
+        </div>
+        <div id="zoomModal" class="modal-overlay modal-overlay--dark modal-overlay--zoom">
+            <div class="modal-panel modal-panel--zoom">
+                <div class="zoom-header">
+                    <h3 class="modal-title modal-title--sm">预览 · <span id="zoomModeLabel">网格图</span></h3>
+                    <button id="closeZoom" class="btn-cream">关闭</button>
+                </div>
+                <div id="zoomModeRow" class="zoom-controls-row">
+                    <span class="zoom-label">模式:</span>
+                    <button id="zoomModeToggleButton" class="btn-cream btn-cream--sm">网格图 ⇄ 成品预览</button>
+                </div>
+                <div id="zoomFuseEffectRow" class="zoom-controls-row">
+                    <span class="zoom-label">效果:</span>
+                    <button class="fuse-effect-option btn-cream btn-cream--sm active-effect" data-effect="plain">普通烫</button>
+                    <button class="fuse-effect-option btn-cream btn-cream--sm" data-effect="towel">毛巾烫</button>
+                </div>
+                <div class="canvas-frame">
+                    <canvas id="zoomCanvas"></canvas>
+                </div>
+                <div class="modal-hint">提示：点击豆子可改色 · 滚轮/双指缩放 · 拖动平移</div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>

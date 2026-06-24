@@ -1,0 +1,36 @@
+# macOS 系统文件
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# 编辑器和临时文件
+*.swp
+*.swo
+*~
+*.bak
+*.tmp
+.vscode/
+.idea/
+*.iml
+
+# 日志和构建产物
+*.log
+dist/
+build/
+node_modules/
+.cache/
+# npm 工具链产物
+node_modules/
+coverage/
+dist/
+*.log
+
+# Claude Code / OpenSpec / Superpowers 工作流产物（个人项目，不上传）
+.claude/
+.superpowers/
+docs/superpowers/
+openspec/
+
+# 示例图片（无引用，仅本地调试用）
+example_pic.png

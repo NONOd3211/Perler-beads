@@ -1,0 +1,405 @@
+/* 拼豆 - 基础 */
+
+/* === 设计 token === */
+:root {
+    --c-primary: #ff6b6b; /* 主色（红粉） */
+    --c-primary-dark: #e55555; /* 主色深 - hover/active */
+    --c-primary-soft: #ffe6e6; /* 主色浅 - 背景点缀 */
+    --c-cream: #fffaf0; /* 米色 - 卡片背景 */
+    --c-cream-deep: #ffe6cc; /* 米色深 - 边框/装饰 */
+    --c-cream-border: #ffd9b3; /* 米色边框 */
+    --c-text: #333; /* 主文字 */
+    --c-text-sub: #666; /* 次文字 */
+    --c-text-mute: #999; /* 淡文字 */
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.container {
+    background-color: var(--c-cream);
+    padding: 32px 48px;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    border: 2px solid var(--c-cream-border);
+    position: relative;
+    overflow: hidden;
+    max-width: 1900px;
+    margin: 24px auto;
+}
+
+.container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 80px;
+    height: 80px;
+    background-color: var(--c-primary-soft);
+    clip-path: polygon(100% 0, 0 0, 100% 100%);
+    opacity: 0.6;
+}
+
+.container::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 80px;
+    height: 80px;
+    background-color: var(--c-primary-soft);
+    clip-path: polygon(0 100%, 0 0, 100% 100%);
+    opacity: 0.6;
+}
+
+h1 {
+    text-align: center;
+    color: var(--c-primary);
+    font-family: 'Press Start 2P', cursive;
+    font-size: clamp(20px, 4.5vw, 32px);
+    text-shadow: 2px 2px 0 var(--c-cream-deep);
+    margin-bottom: 8px;
+    letter-spacing: -1px;
+}
+
+/* 副标题（小字，介绍工具用途） */
+.subtitle {
+    text-align: center;
+    color: var(--c-text-sub);
+    font-size: clamp(11px, 2vw, 14px);
+    margin-bottom: 28px;
+    margin-top: -8px;
+}
+
+button {
+    padding: 11px 22px;
+    font-size: 15px;
+    background-color: var(--c-primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin: 5px;
+    font-family: 'Comic Neue', cursive;
+    font-weight: bold;
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow-sm);
+    min-height: 44px; /* 触屏目标最小尺寸 (WCAG/Apple HIG) */
+    min-width: 44px;
+    -webkit-tap-highlight-color: transparent; /* 去掉移动端点击高亮 */
+    touch-action: manipulation; /* 防止双击缩放 */
+}
+
+button:hover:not(:disabled) {
+    background-color: var(--c-primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(229, 85, 85, 0.25);
+}
+
+button:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+/* disabled 状态：明显区别于 enabled，避免与 enabled 同色系混淆 */
+button:disabled {
+    background-color: #ececec;
+    color: #b5b5b5;
+    cursor: not-allowed;
+    box-shadow: none;
+    /* 斜纹水印叠加，更直观 */
+    background-image: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 4px,
+        rgba(0, 0, 0, 0.04) 4px,
+        rgba(0, 0, 0, 0.04) 8px
+    );
+}
+
+/* === 通用 section 样式 === */
+/* 所有功能区块统一使用这套卡片样式，不再各自染色 */
+.section-card {
+    background: white;
+    border: 2px solid var(--c-cream-border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin: 14px 0;
+}
+
+.section-title {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 14px;
+    color: var(--c-primary); /* 主色红粉，对比度足够高 */
+    margin-bottom: 12px;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.section-title .icon {
+    font-size: 18px;
+    filter: saturate(1.1);
+}
+
+.section-hint {
+    font-size: 12px;
+    color: var(--c-text-mute);
+    margin-top: 8px;
+}
+
+/* === 使用说明（保留独立配色，作为暖色高亮区） === */
+.instructions {
+    background-color: var(--c-primary-soft);
+    padding: 18px 22px;
+    border-radius: 12px;
+    margin: 20px 0;
+    border: 2px dashed var(--c-primary);
+    border-style: dashed;
+}
+
+.instructions h3 {
+    color: var(--c-primary-dark);
+    margin-bottom: 12px;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 14px;
+}
+
+.instructions ol {
+    list-style-type: none;
+    padding-left: 0;
+    counter-reset: step;
+}
+
+.instructions li {
+    position: relative;
+    padding-left: 36px;
+    margin-bottom: 8px;
+    color: var(--c-text);
+    font-size: 14px;
+    counter-increment: step;
+}
+
+.instructions li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 2px;
+    width: 22px;
+    height: 22px;
+    background-color: var(--c-primary);
+    color: white;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 22px;
+    font-size: 12px;
+    font-weight: bold;
+    font-family: 'Press Start 2P', cursive;
+}
+
+.info {
+    background-color: var(--c-cream);
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin: 10px 0;
+    font-size: 14px;
+    border: 1px solid var(--c-cream-border);
+    color: var(--c-text-sub);
+}
+
+/* === 响应式适配 === */
+
+/* Pad 竖屏 / 桌面小屏 (≤1024px) — 容器收边距，preview 两列缩 gap */
+@media (max-width: 1024px) {
+    .container {
+        padding: 28px 32px;
+    }
+    h1 {
+        font-size: 28px;
+    }
+    .preview-section {
+        gap: 14px;
+    }
+    .preview {
+        padding: 14px;
+    }
+}
+
+/* 手机 + 小 pad (≤768px) — preview 单列，按钮加大，section 收紧 */
+@media (max-width: 768px) {
+    .container {
+        padding: 16px 14px;
+        margin: 12px auto;
+    }
+    h1 {
+        font-size: 22px;
+        text-shadow: 1.5px 1.5px 0 var(--c-cream-deep);
+    }
+    .subtitle {
+        font-size: 12px;
+        margin-bottom: 18px;
+    }
+    /* 预览：单列纵向堆叠（修原 grid 没改 flex-direction 的 bug） */
+    .preview-section {
+        grid-template-columns: 1fr;
+        gap: 14px;
+        margin: 16px 0;
+    }
+    .preview {
+        max-width: 100%;
+        width: 100%;
+        padding: 12px;
+    }
+    .preview-stage {
+        min-height: 60px;
+    }
+    /* 预览标题行：小屏允许按钮换到第二行 */
+    .preview-header {
+        flex-wrap: wrap;
+        gap: 8px;
+        min-height: auto;
+    }
+    .preview-header h3 {
+        font-size: 12px;
+    }
+    /* section-card 紧凑 */
+    .section-card {
+        padding: 12px 14px;
+    }
+    .section-title {
+        font-size: 12px;
+    }
+    .section-title .icon {
+        font-size: 16px;
+    }
+    /* button-section 允许换行 + 2x2 排列 */
+    .button-section {
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 18px 0 6px 0;
+    }
+    .button-section button {
+        flex: 1 1 calc(50% - 14px);
+        min-width: 130px;
+    }
+    /* 品牌 / 调色板选项更大点击区 */
+    .brand-option,
+    .palette-option {
+        padding: 10px 12px;
+        font-size: 13px;
+        min-height: 40px;
+    }
+    /* drop-zone 移动端加大 */
+    .drop-zone {
+        padding: 28px 16px;
+    }
+    .drop-zone-icon {
+        font-size: 38px;
+    }
+    .drop-zone-text {
+        font-size: 13px;
+    }
+    .drop-zone-hint {
+        font-size: 11px;
+    }
+    /* 高级设置 details 不挤压 */
+    .advanced-settings > summary {
+        padding: 12px 14px;
+        font-size: 12px;
+    }
+    /* instructions 紧凑 */
+    .instructions {
+        padding: 14px 16px;
+    }
+    .instructions h3 {
+        font-size: 12px;
+    }
+    .instructions li {
+        font-size: 13px;
+        padding-left: 32px;
+    }
+    /* select 全宽 + 大点击区 */
+    .pixelation-section select {
+        max-width: 100%;
+        min-height: 40px;
+        font-size: 13px;
+    }
+}
+
+/* 手机竖屏 (≤480px) — 进一步压缩，按钮全宽，预览标题行换行更明显 */
+@media (max-width: 480px) {
+    .container {
+        padding: 12px 10px;
+    }
+    h1 {
+        font-size: 18px;
+        letter-spacing: 0;
+    }
+    .subtitle {
+        font-size: 11px;
+        margin-bottom: 14px;
+    }
+    .preview-header h3 {
+        font-size: 11px;
+        flex: 1 1 100%;
+    }
+    .preview-header .btn-cream {
+        font-size: 11px;
+        padding: 6px 10px;
+        min-height: 32px;
+    }
+    /* 按钮全宽 */
+    .button-section button {
+        flex: 1 1 100%;
+    }
+    /* instructions 更紧凑 */
+    .instructions li {
+        font-size: 12px;
+        padding-left: 28px;
+        margin-bottom: 6px;
+    }
+    .instructions li::before {
+        width: 20px;
+        height: 20px;
+        line-height: 20px;
+        font-size: 11px;
+    }
+    .info {
+        font-size: 12px;
+        padding: 8px 10px;
+    }
+}
+
+@keyframes pixelBounce {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+.pixel-bounce {
+    animation: pixelBounce 2s infinite;
+}
+
+/* 拖拽上传视觉反馈 - 整个 container 加边框高亮 */
+body.dragging-file .container {
+    border-color: var(--c-primary);
+    border-style: dashed;
+    box-shadow:
+        0 0 0 4px var(--c-primary-soft),
+        var(--shadow-md);
+}
+
+/* 拖拽时 drop-zone 自身的强烈视觉反馈 */
+body.dragging-file .drop-zone {
+    background-color: var(--c-primary-soft);
+    border-color: var(--c-primary);
+    border-style: solid;
+}
+
+body.dragging-file .drop-zone-hint {
+    opacity: 1;
+    color: var(--c-primary-dark);
+}
