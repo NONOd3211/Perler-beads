@@ -1,10 +1,10 @@
 // js/ui-core.js — DOM 元素引用收集 + attachCore 入口
 // 职责:把 document.getElementById/querySelectorAll 的引用收集到 dom refs,
-//       初始化 palette / brand / tempCanvas / tempCtx 默认值
+//       初始化 palette / tempCanvas / tempCtx 默认值
 // 不注册任何事件 — 各 ui-* 模块在 attachCore 后自行 register
 
 import { BeadPalettes } from './palettes.js';
-import { attachDomRefs, setPalette, setBrand, setTempCtx } from './state.js';
+import { attachDomRefs, setPalette, setTempCtx } from './state.js';
 
 export function attachCore(win = window) {
     const domRefs = {
@@ -19,7 +19,6 @@ export function attachCore(win = window) {
         perlerInfo: win.document.getElementById('perlerInfo'),
         densityOptions: win.document.querySelectorAll('input[name="density"]'),
         paletteOptions: win.document.querySelectorAll('input[name="palette"]'),
-        brandOptions: win.document.querySelectorAll('input[name="brand"]'),
         colorListButton: win.document.getElementById('colorListButton'),
         colorListModal: win.document.getElementById('colorListModal'),
         colorListContent: win.document.getElementById('colorListContent'),
@@ -49,9 +48,8 @@ export function attachCore(win = window) {
     };
     attachDomRefs(domRefs);
 
-    // 初始化 palette / brand 默认值(A 阶段 ui-core.js:28-30 一致)
+    // 初始化 palette 默认值(MARD 单品牌)
     setPalette(BeadPalettes.p221, 221);
-    setBrand('MARD');
 
     // 初始化 tempCanvas / tempCtx(隐藏 canvas,只在内存中)
     const tempCanvasEl = win.document.createElement('canvas');

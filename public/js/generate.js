@@ -13,7 +13,6 @@ import {
     dom as stateDom,
     pixelationMode,
     mergeThreshold,
-    currentBrand,
     tempCanvas,
     tempCtx,
     lastFileSize,
@@ -30,7 +29,7 @@ import {
 
 // 在指定 canvas 上绘制网格图(每格一色 + 网格线 + 色号文字)
 // 纯函数:不修改 window.*,仅消费入参
-export function drawGrid(ctx, grid, cols, rows, cellSize, brand) {
+export function drawGrid(ctx, grid, cols, rows, cellSize) {
     for (let row = 0; row < rows; row++) {
         for (let col = 0; col < cols; col++) {
             const x = Math.round(col * cellSize);
@@ -63,7 +62,7 @@ export function drawGrid(ctx, grid, cols, rows, cellSize, brand) {
 
             // 绘制文本
             ctx.fillStyle = textColor;
-            ctx.fillText(BeadColor.getDisplayCode(color, brand), x + sz / 2, y + sz / 2);
+            ctx.fillText(BeadColor.getDisplayCode(color), x + sz / 2, y + sz / 2);
         }
     }
 
@@ -262,9 +261,9 @@ export function generatePerlerGrid() {
             stateDom.exportCanvas.height = canvasHeight;
             const exportCtx = stateDom.exportCanvas.getContext('2d');
             exportCtx.clearRect(0, 0, canvasWidth, canvasHeight);
-            drawGrid(exportCtx, mergedGrid, cols, rows, cellSize, currentBrand);
+            drawGrid(exportCtx, mergedGrid, cols, rows, cellSize);
         }
-        drawGrid(ctx, mergedGrid, cols, rows, cellSize, currentBrand);
+        drawGrid(ctx, mergedGrid, cols, rows, cellSize);
         drawBgOverlay(
             ctx,
             mergedGrid,

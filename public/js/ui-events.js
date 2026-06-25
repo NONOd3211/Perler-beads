@@ -1,4 +1,4 @@
-// js/ui-events.js — 其他事件(fileInput / download / reset / colorList / editor / keyboard / density / palette / brand / pixelation / merge)
+// js/ui-events.js — 其他事件(fileInput / download / reset / colorList / editor / keyboard / density / palette / pixelation / merge)
 import {
     dom as stateDom,
     setLastFileSize,
@@ -8,8 +8,6 @@ import {
     setPixelationMode,
     currentPalette,
     setPalette,
-    currentBrand,
-    setBrand,
     setFuseEffect,
     lastMergedGrid,
     setLastMergedGrid,
@@ -176,15 +174,6 @@ export function attachEventsListeners(win = window) {
         });
     });
 
-    // ---- brand change handler ----
-    stateDom.brandOptions.forEach((option) => {
-        option.addEventListener('change', function () {
-            if (this.disabled) return;
-            setBrand(this.value);
-            if (currentImage) recomputePreservingRefine('brand');
-        });
-    });
-
     // ---- colorList modal 显隐 + 配色清单渲染 ----
     const closeColorListBtn = doc.getElementById('closeColorList');
     closeColorListBtn.addEventListener('click', function () {
@@ -202,7 +191,7 @@ export function attachEventsListeners(win = window) {
                 const c = lastMergedGrid[row][col];
                 if (c.transparent) continue; // 全透明格不分配色号,不计入清单
                 beadTotal++;
-                const key = getDisplayCode(c, currentBrand);
+                const key = getDisplayCode(c);
                 if (!counts.has(key)) counts.set(key, { color: c, code: key, count: 0 });
                 counts.get(key).count++;
             }
@@ -381,7 +370,7 @@ export function attachEventsListeners(win = window) {
         const err = doc.getElementById('editorCodeError');
         const target = (input.value || '').trim().toUpperCase();
         if (!target) return;
-        const match = currentPalette.find((p) => getDisplayCode(p, currentBrand) === target);
+        const match = currentPalette.find((p) => getDisplayCode(p) === target);
         if (!match) {
             if (err) err.style.display = 'block';
             return;

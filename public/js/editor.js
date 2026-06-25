@@ -9,7 +9,6 @@ import {
     editorFuture,
     lastMergedGrid,
     lastCellSize,
-    currentBrand,
     currentPalette,
     recentCodes,
     pushRecentCode,
@@ -71,9 +70,9 @@ async function drawFusedForEditor(ctx, grid, cols, rows, cs) {
     const { drawFused } = await import('./fused-preview.js');
     drawFused(ctx, grid, cols, rows, cs);
 }
-async function drawGridForEditor(ctx, grid, cols, rows, cs, brand) {
+async function drawGridForEditor(ctx, grid, cols, rows, cs) {
     const { drawGrid } = await import('./generate.js');
-    drawGrid(ctx, grid, cols, rows, cs, brand);
+    drawGrid(ctx, grid, cols, rows, cs);
 }
 
 export function applyColorChange(row, col, newColor) {
@@ -84,7 +83,7 @@ export function applyColorChange(row, col, newColor) {
     // 2. 改 grid
     lastMergedGrid[row][col] = newColor;
     // 3. 更新最近色号(去重 + 置顶 + 截断到 12)
-    const code = getDisplayCode(newColor, currentBrand);
+    const code = getDisplayCode(newColor);
     pushRecentCode(code);
     // 4. 局部重绘
     const cs = lastCellSize;
@@ -99,7 +98,7 @@ export function applyColorChange(row, col, newColor) {
         const x = col * cs,
             y = row * cs;
         ctx.clearRect(x - 1, y - 1, cs + 2, cs + 2);
-        drawGridForEditor(ctx, lastMergedGrid, lastGridCols, lastGridRows, cs, currentBrand);
+        drawGridForEditor(ctx, lastMergedGrid, lastGridCols, lastGridRows, cs);
     }
 }
 export function pickSimilarColors(currentColor, palette, n) {
@@ -129,7 +128,7 @@ export function getRecentCodes(n) {
         const palette = currentPalette || [];
         for (const c of palette) {
             if (out.length >= n) break;
-            const code = getDisplayCode(c, currentBrand);
+            const code = getDisplayCode(c);
             if (!out.includes(code)) out.push(code);
         }
     }
@@ -143,7 +142,7 @@ export function openPicker(row, col) {
     pickerActive.current = { row, col };
 
     // 当前色
-    const code = getDisplayCode(cell, currentBrand);
+    const code = getDisplayCode(cell);
     const codeEl = document.getElementById('editorCurrentCode');
     const swEl = document.getElementById('editorCurrentSwatch');
     if (codeEl) codeEl.textContent = code;
@@ -160,7 +159,7 @@ export function openPicker(row, col) {
             sw.className = 'swatch';
             sw.style.backgroundColor = s.hex;
             div.appendChild(sw);
-            const sc = getDisplayCode(s, currentBrand);
+            const sc = getDisplayCode(s);
             div.appendChild(document.createTextNode(sc));
             div.addEventListener('click', () => {
                 applyColorChange(row, col, s);
@@ -177,7 +176,7 @@ export function openPicker(row, col) {
         const codes = getRecentCodes(12);
         for (const c of codes) {
             // 从 palette 反查 hex
-            const match = currentPalette.find((p) => getDisplayCode(p, currentBrand) === c);
+            const match = currentPalette.find((p) => getDisplayCode(p) === c);
             const div = document.createElement('div');
             const sw = document.createElement('div');
             sw.className = 'swatch';

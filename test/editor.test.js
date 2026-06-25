@@ -11,7 +11,6 @@ vi.mock('../public/js/render-bus.js', () => ({
 import {
     attachDomRefs,
     setPalette,
-    setBrand,
     setLastCellSize,
     setLastGridDims,
     setLastMergedGrid,
@@ -47,7 +46,6 @@ function freshGrid() {
 beforeEach(() => {
     attachDomRefs({ perlerCanvas: mockCanvas });
     setPalette(BeadPalettes.p221, 221);
-    setBrand('MARD');
     setLastCellSize(20);
     setLastGridDims(2, 2);
     clearManualRefine();
@@ -67,7 +65,7 @@ describe('applyColorChange', () => {
         setLastMergedGrid(grid);
         const newColor = BeadPalettes.p221[10];
         applyColorChange(0, 0, newColor);
-        const code = getDisplayCode(BeadPalettes.p221[10], 'MARD');
+        const code = getDisplayCode(BeadPalettes.p221[10]);
         expect(recentCodes[0]).toBe(code);
     });
 

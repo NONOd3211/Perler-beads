@@ -15,7 +15,6 @@ export function attachDomRefs(refs) {
 // ---- 运行时可变状态(顶层 let,整体重新赋值需走 mutator) ----
 export let currentPalette = null;
 export let currentPaletteId = 221;
-export let currentBrand = 'MARD';
 export let currentImage = null;
 export let tempCanvas = null;
 export let tempCtx = null;
@@ -31,9 +30,9 @@ export let lastGridCols = 0;
 export let lastGridRows = 0;
 export let bgRemovalEnabled = false;
 export let bgRemovalMode = 'auto'; // 'auto' | 'manual'
-export let bgThreshold = 12;
+export let bgThreshold = 4;
 export let bgManualPoints = []; // Array<{col: number, row: number}>
-export let sampleMatchThr = 12;
+export let sampleMatchThr = 4;
 
 // ---- 数组引用 ----
 export const editorHistory = [];
@@ -45,9 +44,6 @@ export const pickerActive = { current: null };
 export function setPalette(p, id = 221) {
     currentPalette = p;
     currentPaletteId = id;
-}
-export function setBrand(b) {
-    currentBrand = b;
 }
 export function setCurrentImage(img) {
     currentImage = img;

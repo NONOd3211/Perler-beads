@@ -20,7 +20,7 @@
             <h3>使用说明</h3>
             <ol>
                 <li>点击或拖拽上传你的照片（透明 PNG 效果最佳）</li>
-                <li>选择拼豆板尺寸、品牌、色板</li>
+                <li>选择拼豆板尺寸、色板</li>
                 <li>系统自动生成拼豆图纸</li>
                 <li>满意后下载图纸 + 配色清单</li>
             </ol>
@@ -35,30 +35,6 @@
             <label class="density-option">
                 <input type="radio" name="density" value="104">
                 104×104 精细格
-            </label>
-        </div>
-
-        <div class="section-card brand-section">
-            <h3 class="section-title"><span class="icon">🏷️</span>拼豆品牌</h3>
-            <label class="brand-option">
-                <input type="radio" name="brand" value="MARD" checked>
-                MARD
-            </label>
-            <label class="brand-option">
-                <input type="radio" name="brand" value="COCO">
-                COCO
-            </label>
-            <label class="brand-option">
-                <input type="radio" name="brand" value="漫漫">
-                漫漫
-            </label>
-            <label class="brand-option">
-                <input type="radio" name="brand" value="盼盼">
-                盼盼
-            </label>
-            <label class="brand-option">
-                <input type="radio" name="brand" value="咪小窝">
-                咪小窝
             </label>
         </div>
 
@@ -89,13 +65,13 @@
                     </fieldset>
 
                     <label class="bg-slider-row">
-                        判定阈值: <span id="bgThresholdValue">12</span>
-                        <input type="range" id="bgThresholdSlider" min="0" max="50" step="1" value="12" disabled>
+                        判定阈值: <span id="bgThresholdValue">4</span>
+                        <input type="range" id="bgThresholdSlider" min="0" max="50" step="1" value="4" disabled>
                     </label>
 
                     <label class="bg-slider-row" id="sampleMatchThrRow" hidden>
-                        采样阈值: <span id="sampleMatchThrValue">12</span>
-                        <input type="range" id="sampleMatchThrSlider" min="0" max="50" step="1" value="12" disabled>
+                        采样阈值: <span id="sampleMatchThrValue">4</span>
+                        <input type="range" id="sampleMatchThrSlider" min="0" max="50" step="1" value="4" disabled>
                     </label>
 
                     <div id="bgManualControls" class="bg-manual-controls" hidden>

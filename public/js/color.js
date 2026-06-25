@@ -2,8 +2,8 @@
 // ESM 化:IIFE wrapper 去掉;所有 `window.Oklab.xxx` 改为 import 的 `rgbToOklab`;
 // 所有 `window.currentPalette` 改为 import 的 `currentPalette`(state.js 顶层 let binding,只读);
 // 所有 `window.tempCtx.getImageData(...)` 改为 import 的 `tempCtx.getImageData(...)`
+// MARD 单品牌:getDisplayCode 直接返回 cell.code,不再反查 COLOR_MAPPING
 
-import { BeadPalettes } from './palettes.js';
 import { rgbToOklab } from './oklab.js';
 import { currentPalette, tempCtx } from './state.js';
 
@@ -527,10 +527,9 @@ export function mergeSimilarColors(gridColors, cols, rows, distanceThreshold) {
     return mergedGrid;
 }
 
-// 按当前品牌取显示色号
-export function getDisplayCode(color, brand) {
-    const m = BeadPalettes.COLOR_MAPPING[color.hex];
-    return m && m[brand] ? m[brand] : color.code;
+// 按当前品牌取显示色号(MARD 单品牌,直接返回 cell.code)
+export function getDisplayCode(color) {
+    return color.code;
 }
 
 // 移除孤立的"翻盘像素":JPEG/降采样伪影会导致 104 网格的某格

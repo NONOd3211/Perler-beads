@@ -12,7 +12,6 @@
 import {
     dom,
     currentMode,
-    currentBrand,
     lastMergedGrid,
     lastPreMergeGrid,
     lastGridCols,
@@ -37,11 +36,10 @@ export function repaintCurrentMode() {
     const canvas = dom.perlerCanvas;
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawGrid(ctx, lastMergedGrid, lastGridCols, lastGridRows, lastCellSize, currentBrand);
+    drawGrid(ctx, lastMergedGrid, lastGridCols, lastGridRows, lastCellSize);
 }
 
-// 切品牌/色板/阈值后,保留手动精修痕迹地重算并重绘。
-// - brand:grid 数据不变,仅按新品牌重画(色号文案随之变)。
+// 切色板/阈值后,保留手动精修痕迹地重算并重绘。
 // - palette:每格重新映射到新色板的最近色,再重画。
 // - threshold:用合并前的 preMergeGrid 按新阈值重新合并,更新 mergedGrid 后重画。
 // - 其它/缺数据:回退到整图重新生成。
@@ -55,13 +53,6 @@ export function recomputePreservingRefine(kind) {
     const cols = lastGridCols;
     const rows = lastGridRows;
     const cs = lastCellSize;
-    const brand = currentBrand;
-
-    if (kind === 'brand') {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        drawGrid(ctx, lastMergedGrid, cols, rows, cs, brand);
-        return;
-    }
 
     if (kind === 'palette') {
         for (let r = 0; r < rows; r++) {
@@ -72,7 +63,7 @@ export function recomputePreservingRefine(kind) {
             }
         }
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        drawGrid(ctx, lastMergedGrid, cols, rows, cs, brand);
+        drawGrid(ctx, lastMergedGrid, cols, rows, cs);
         return;
     }
 
@@ -84,7 +75,7 @@ export function recomputePreservingRefine(kind) {
         const remerged = mergeSimilarColors(lastPreMergeGrid, cols, rows, mergeThreshold);
         setLastMergedGrid(remerged);
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        drawGrid(ctx, remerged, cols, rows, cs, brand);
+        drawGrid(ctx, remerged, cols, rows, cs);
         return;
     }
 
