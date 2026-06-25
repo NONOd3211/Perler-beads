@@ -209,9 +209,12 @@ export function generatePerlerGrid() {
         // 第三步:bgRemoval pass(在 mergedGrid 之上,标 {transparent:true})
         // 两种模式共享同一阈值结构:cell 与样本 Oklab 距离 < bgThreshold 视为背景
         if (bgRemovalEnabled) {
-            const samples =
+            const { samples, overflow } =
                 bgRemovalMode === 'auto'
-                    ? computeBackgroundSamplesFromGridAuto(mergedGrid, cols, rows)
+                    ? {
+                          samples: computeBackgroundSamplesFromGridAuto(mergedGrid, cols, rows),
+                          overflow: false,
+                      }
                     : computeBackgroundSamplesFromGridPoints(
                           mergedGrid,
                           bgManualPoints,
@@ -219,6 +222,10 @@ export function generatePerlerGrid() {
                           cols,
                           rows
                       );
+            if (overflow) {
+                // 协调层提示(manual 模式 BFS 触 5000 格上限);彻底解耦到 UI 层留待 #3 重构
+                alert('采样区过大,已按 5000 格上限截断');
+            }
             if (samples.length > 0) {
                 const next = mergedGrid.map((row) => row.slice());
                 for (let r = 0; r < rows; r++) {

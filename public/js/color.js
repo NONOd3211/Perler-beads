@@ -128,6 +128,7 @@ export function computeBackgroundSamplesFromGridPoints(
     const MAX_CELLS = 5000;
     const samples = [];
     const visited = new Uint8Array(cols * rows);
+    let overflow = false; // BFS 触上限标志,交由调用方提示(不在算法层 alert)
 
     for (const { col, row } of clickPoints) {
         if (col < 0 || col >= cols || row < 0 || row >= rows) continue;
@@ -157,9 +158,9 @@ export function computeBackgroundSamplesFromGridPoints(
             stack.push([c + 1, r], [c - 1, r], [c, r + 1], [c, r - 1]);
         }
 
-        // BFS 触 5000 上限且仍有未探索邻接 cell,提示用户采样区过大
+        // BFS 触 5000 上限且仍有未探索邻接 cell → 置标志(不在算法层 alert,交由调用方提示)
         if (count >= MAX_CELLS && stack.length > 0) {
-            alert('采样区过大');
+            overflow = true;
         }
 
         if (collected.length === 0) continue;
@@ -185,7 +186,7 @@ export function computeBackgroundSamplesFromGridPoints(
         if (!isDuplicate) samples.push(newSample);
     }
 
-    return samples;
+    return { samples, overflow };
 }
 
 // 计算全局 α-weighted mean:Σ(pixel.rgb × α) / Σ(α)
