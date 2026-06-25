@@ -17,8 +17,8 @@ import {
     currentMode,
     lastGridCols,
     lastGridRows,
-    repaintCurrentMode,
 } from './state.js';
+import { repaintCurrentMode } from './render-bus.js';
 
 // 命令模式:history 存 {row, col, oldCell, newCell} diff 元组(单格 4 元组)
 // undo/redo 通过 diff 写回单格,不再 clone 整 grid
@@ -44,7 +44,7 @@ export function undo() {
     if (editorFuture.length > 50) editorFuture.shift();
     // 写回 oldCell(单格)
     lastMergedGrid[diff.row][diff.col] = diff.oldCell;
-    if (typeof repaintCurrentMode === 'function') repaintCurrentMode();
+    repaintCurrentMode();
 }
 export function redo() {
     if (editorFuture.length === 0) return;
@@ -58,7 +58,7 @@ export function redo() {
     if (editorHistory.length > 50) editorHistory.shift();
     // 写回 newCell(单格)
     lastMergedGrid[diff.row][diff.col] = diff.newCell;
-    if (typeof repaintCurrentMode === 'function') repaintCurrentMode();
+    repaintCurrentMode();
 }
 export function canUndo() {
     return editorHistory.length > 0;

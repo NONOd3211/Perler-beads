@@ -94,29 +94,8 @@ export function clearPickerActive() {
     pickerActive.current = null;
 }
 
-// ---- 跨模块 helper:重绘当前模式(供 editor.js undo/redo + ui-mode 切换用) ----
-// 实现依赖 generate.js 的 drawGrid 与 fused-preview.js 的 repaintFused,
-// 在 generate.js / fused-preview.js 改造完成后(后续 task)真正引用。
-// 此处先占位为 no-op,避免循环 import;Task 8 会用 dynamic import 或
-// 在 main.js attachCore 时绑回真实实现。
-let _repaintCurrentMode = function () {};
-export function setRepaintCurrentMode(fn) {
-    _repaintCurrentMode = fn;
-}
-export function repaintCurrentMode() {
-    _repaintCurrentMode();
-}
-
-// ---- 跨模块 helper:BeadRefine 精修保留重算 ----
-let _recomputePreservingRefine = function () {};
-export function setRecomputePreservingRefine(fn) {
-    _recomputePreservingRefine = fn;
-}
-export const BeadRefine = {
-    recomputePreservingRefine(kind) {
-        _recomputePreservingRefine(kind);
-    },
-};
+// 渲染调度(repaintCurrentMode / recomputePreservingRefine)已移至 render-bus.js,
+// 形成单向依赖 render-bus → state/generate/fused-preview/color,消除循环 import。
 
 // ---- 跨模块 helper:bgRemoval mutators ----
 export function setBgRemovalEnabled(v) {

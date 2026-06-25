@@ -5,8 +5,8 @@ import {
     setFuseEffect,
     currentMode,
     lastMergedGrid,
-    repaintCurrentMode,
 } from './state.js';
+import { repaintCurrentMode } from './render-bus.js';
 
 export function syncFuseEffectButtons() {
     const buttons = stateDom && stateDom.fuseEffectOptionButtons; // 已在 attachCore 时 querySelectorAll

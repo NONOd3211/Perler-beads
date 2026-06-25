@@ -1,4 +1,9 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+// render-bus 是 canvas 渲染边界,单元测试 mock 掉避免真实绘制
+vi.mock('../public/js/render-bus.js', () => ({
+    repaintCurrentMode: vi.fn(),
+    recomputePreservingRefine: vi.fn(),
+}));
 
 import {
     calculateColorDistance,
@@ -28,14 +33,13 @@ import {
     editorFuture,
     lastMergedGrid,
     setLastMergedGrid,
-    setRepaintCurrentMode,
     setLastGridDims,
 } from '../public/js/state.js';
+import { repaintCurrentMode } from '../public/js/render-bus.js';
 import { BeadPalettes } from '../public/js/palettes.js';
 
-// 测试前初始化 palette(原 ui-core 职责),并在 beforeEach 重置 repaintCurrentMode 为 no-op
+// 测试前初始化 palette(原 ui-core 职责)
 setPalette(BeadPalettes.p221, 221);
-setRepaintCurrentMode(() => {}); // no-op stub,避免 editor.js undo/redo 报 undefined
 setLastGridDims(0, 0);
 
 // 每个 test 模拟的 tempCtx 需在 beforeEach 重置,避免污染
@@ -443,7 +447,7 @@ describe('BeadEditor history', () => {
         editorHistory.length = 0;
         editorFuture.length = 0;
         setLastMergedGrid(null);
-        setRepaintCurrentMode(() => {}); // no-op stub
+        repaintCurrentMode.mockClear();
     });
 
     it('canUndo/canRedo reflect stack state', () => {
@@ -518,14 +522,10 @@ describe('BeadEditor history', () => {
 
     it('undo/redo on empty stacks are no-ops', () => {
         setLastMergedGrid([[mkCell(1, 2, 3, 'STAY')]]);
-        let calls = 0;
-        setRepaintCurrentMode(() => {
-            calls++;
-        });
         undo();
         redo();
         expect(lastMergedGrid[0][0].code).toBe('STAY');
-        expect(calls).toBe(0);
+        expect(repaintCurrentMode).toHaveBeenCalledTimes(0);
     });
 });
 
@@ -694,7 +694,7 @@ describe('computeBackgroundSamplesFromGridPoints', () => {
 
     it('单点击白区 cell:返回 [{255,255,255}]', () => {
         const grid = mkUniformGrid(20, 20, { r: 255, g: 255, b: 255 });
-        const samples = computeBackgroundSamplesFromGridPoints(
+        const { samples } = computeBackgroundSamplesFromGridPoints(
             grid,
             [{ col: 5, row: 5 }],
             12,
@@ -713,7 +713,7 @@ describe('computeBackgroundSamplesFromGridPoints', () => {
                 return mkCell(255, 0, 0);
             })
         );
-        const samples = computeBackgroundSamplesFromGridPoints(
+        const { samples } = computeBackgroundSamplesFromGridPoints(
             grid,
             [{ col: 2, row: 2 }],
             12,
@@ -728,7 +728,7 @@ describe('computeBackgroundSamplesFromGridPoints', () => {
 
     it('重复点 dedup:3 个同点 → 只 1 个样本', () => {
         const grid = mkUniformGrid(20, 20, { r: 200, g: 200, b: 200 });
-        const samples = computeBackgroundSamplesFromGridPoints(
+        const { samples } = computeBackgroundSamplesFromGridPoints(
             grid,
             [
                 { col: 5, row: 5 },
@@ -744,7 +744,7 @@ describe('computeBackgroundSamplesFromGridPoints', () => {
 
     it('越界点 clip:col=-1,row=999 → 跳过(无效)', () => {
         const grid = mkUniformGrid(10, 10, { r: 100, g: 100, b: 100 });
-        const samples = computeBackgroundSamplesFromGridPoints(
+        const { samples } = computeBackgroundSamplesFromGridPoints(
             grid,
             [
                 { col: -1, row: 5 },
@@ -761,7 +761,7 @@ describe('computeBackgroundSamplesFromGridPoints', () => {
         const grid = Array.from({ length: 10 }, () =>
             Array.from({ length: 10 }, () => mkTransparent())
         );
-        const samples = computeBackgroundSamplesFromGridPoints(
+        const { samples } = computeBackgroundSamplesFromGridPoints(
             grid,
             [
                 { col: 5, row: 5 },
@@ -774,28 +774,19 @@ describe('computeBackgroundSamplesFromGridPoints', () => {
         expect(samples).toEqual([]);
     });
 
-    it('BFS 5000 上限:大 grid 触发 alert("采样区过大")', () => {
-        // 100x100 全同色 grid,点击中心 → BFS 收集 ≥ 5000 cells → alert
+    it('BFS 5000 上限:大 grid → overflow=true(不再 alert,由调用方提示)', () => {
+        // 100x100 全同色 grid,点击中心 → BFS 收集 ≥ 5000 cells → overflow 标志置位
         const grid = mkUniformGrid(100, 100, { r: 255, g: 255, b: 255 });
-        const originalAlert = global.alert;
-        let alerted = null;
-        global.alert = (msg) => {
-            alerted = msg;
-        };
-        try {
-            const samples = computeBackgroundSamplesFromGridPoints(
-                grid,
-                [{ col: 50, row: 50 }],
-                12,
-                100,
-                100
-            );
-            // 100x100 = 10000 cells,> 5000 → 触发 alert
-            expect(alerted).toBe('采样区过大');
-            expect(samples.length).toBeGreaterThan(0);
-        } finally {
-            global.alert = originalAlert;
-        }
+        const { samples, overflow } = computeBackgroundSamplesFromGridPoints(
+            grid,
+            [{ col: 50, row: 50 }],
+            12,
+            100,
+            100
+        );
+        // 100x100 = 10000 cells,> 5000 → overflow
+        expect(overflow).toBe(true);
+        expect(samples.length).toBeGreaterThan(0);
     });
 
     it('多不同色点:返回多个样本(白/红/蓝各 1)', () => {
@@ -807,7 +798,7 @@ describe('computeBackgroundSamplesFromGridPoints', () => {
                 return mkCell(0, 0, 255);
             })
         );
-        const samples = computeBackgroundSamplesFromGridPoints(
+        const { samples } = computeBackgroundSamplesFromGridPoints(
             grid,
             [
                 { col: 2, row: 5 },

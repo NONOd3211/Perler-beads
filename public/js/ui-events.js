@@ -19,7 +19,6 @@ import {
     recentCodes,
     pickerActive,
     clearManualRefine,
-    BeadRefine,
     lastCellSize,
     lastGridCols,
     lastGridRows,
@@ -37,6 +36,7 @@ import {
 import { getDisplayCode } from './color.js';
 import { applyColorChange, openPicker, closePicker, undo, redo } from './editor.js';
 import { generatePerlerGrid } from './generate.js';
+import { recomputePreservingRefine } from './render-bus.js';
 
 // ---- 文件处理(点击上传与拖拽上传共用) ----
 function isValidImageFile(file) {
@@ -172,7 +172,7 @@ export function attachEventsListeners(win = window) {
             const paletteValue = parseInt(this.value);
             const palette = await getPaletteById(paletteValue);
             setPalette(palette, paletteValue);
-            if (currentImage) BeadRefine.recomputePreservingRefine('palette');
+            if (currentImage) recomputePreservingRefine('palette');
         });
     });
 
@@ -181,7 +181,7 @@ export function attachEventsListeners(win = window) {
         option.addEventListener('change', function () {
             if (this.disabled) return;
             setBrand(this.value);
-            if (currentImage) BeadRefine.recomputePreservingRefine('brand');
+            if (currentImage) recomputePreservingRefine('brand');
         });
     });
 
@@ -336,7 +336,7 @@ export function attachEventsListeners(win = window) {
         setMergeThreshold(+this.value);
         mergeValueLabel.textContent = this.value;
         if (currentImage && lastPreMergeGrid) {
-            BeadRefine.recomputePreservingRefine('threshold');
+            recomputePreservingRefine('threshold');
         }
     }
     mergeSlider.addEventListener('input', onMergeSliderChange);

@@ -2,7 +2,12 @@
 // 复现背景:曾因 recentCodes 直接赋值 ESM 只读 binding 抛 TypeError,导致改色无反应。
 // jsdom 不实现 canvas,用 Proxy 把 ctx 任意方法/属性 mock 成 no-op。
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+// render-bus 是 canvas 渲染边界,单元测试 mock 掉避免真实绘制
+vi.mock('../public/js/render-bus.js', () => ({
+    repaintCurrentMode: vi.fn(),
+    recomputePreservingRefine: vi.fn(),
+}));
 import {
     attachDomRefs,
     setPalette,
@@ -10,7 +15,6 @@ import {
     setLastCellSize,
     setLastGridDims,
     setLastMergedGrid,
-    setRepaintCurrentMode,
     clearManualRefine,
     recentCodes,
 } from '../public/js/state.js';
@@ -46,7 +50,6 @@ beforeEach(() => {
     setBrand('MARD');
     setLastCellSize(20);
     setLastGridDims(2, 2);
-    setRepaintCurrentMode(() => {});
     clearManualRefine();
 });
 

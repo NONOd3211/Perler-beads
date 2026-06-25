@@ -4,8 +4,8 @@ import {
     currentMode,
     lastMergedGrid,
     setMode,
-    repaintCurrentMode,
 } from './state.js';
+import { repaintCurrentMode } from './render-bus.js';
 import { syncFuseEffectDisabledState } from './ui-fuse.js';
 import { syncZoomCanvas } from './ui-modals.js';
 
