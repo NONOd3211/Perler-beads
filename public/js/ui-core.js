@@ -41,10 +41,22 @@ export function attachCore(win = window) {
         editorCodeSubmit: win.document.getElementById('editorCodeSubmit'),
         editorCancel: win.document.getElementById('editorCancel'),
         pixelationModeSelect: win.document.getElementById('pixelationModeSelect'),
+        pixelBeadsPresetBlock: win.document.getElementById('pixelBeadsPresetBlock'),
+        pixelBeadsPresetSelect: win.document.getElementById('pixelBeadsPresetSelect'),
         mergeSlider: win.document.getElementById('mergeSlider'),
         mergeValue: win.document.getElementById('mergeValue'),
         closeColorList: win.document.getElementById('closeColorList'),
         fuseEffectOptionButtons: win.document.querySelectorAll('.fuse-effect-option'),
+        // 扫描导入(Scanner)DOM refs;缺失时为 null,attachScannerListeners 已做 null 守卫
+        scannerImportButton: win.document.getElementById('scannerImportButton'),
+        scannerModal: win.document.getElementById('scannerModal'),
+        scannerFileInput: win.document.getElementById('scannerFileInput'),
+        scannerPreviewCanvas: win.document.getElementById('scannerPreviewCanvas'),
+        scannerStep1: win.document.getElementById('scannerStep1'),
+        scannerStep3: win.document.getElementById('scannerStep3'),
+        scannerApplyBtn: win.document.getElementById('scannerApplyBtn'),
+        scannerCancelBtn1: win.document.getElementById('scannerCancelBtn1'),
+        scannerCancelBtn3: win.document.getElementById('scannerCancelBtn3'),
     };
     attachDomRefs(domRefs);
 

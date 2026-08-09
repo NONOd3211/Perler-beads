@@ -6,6 +6,8 @@ import {
     setCurrentImage,
     pixelationMode,
     setPixelationMode,
+    pixelBeadsPresetId,
+    setPixelBeadsPresetId,
     currentPalette,
     setPalette,
     setFuseEffect,
@@ -300,6 +302,8 @@ export function attachEventsListeners(win = window) {
 
     // ---- 像素化模式 select ----
     const pixelationModeSelect = doc.getElementById('pixelationModeSelect');
+    const pixelBeadsPresetBlock = doc.getElementById('pixelBeadsPresetBlock');
+    const pixelBeadsPresetSelect = doc.getElementById('pixelBeadsPresetSelect');
     pixelationModeSelect.addEventListener('change', async function () {
         if (currentImage && (editorHistory.length > 0 || recentCodes.length > 0)) {
             if (!confirm('切换处理模式会丢失所有手动精修,是否继续?')) {
@@ -309,12 +313,28 @@ export function attachEventsListeners(win = window) {
             }
             clearManualRefine();
         }
-        setPixelationMode(this.value);
+        const newMode = this.value;
+        setPixelationMode(newMode);
+        // 切到 pixel-beads 时显示 5 档下拉,切回去时隐藏
+        if (pixelBeadsPresetBlock) {
+            pixelBeadsPresetBlock.style.display = newMode === 'pixel-beads' ? 'block' : 'none';
+        }
         if (currentImage) {
             const { generatePerlerGrid } = await import('./generate.js');
             generatePerlerGrid();
         }
     });
+
+    // ---- pixel-beads 5 档预设 select ----
+    if (pixelBeadsPresetSelect) {
+        pixelBeadsPresetSelect.addEventListener('change', async function () {
+            setPixelBeadsPresetId(this.value);
+            if (currentImage) {
+                const { generatePerlerGrid } = await import('./generate.js');
+                generatePerlerGrid();
+            }
+        });
+    }
 
     // ---- merge slider(拖动时实时生效,边拖边重算) ----
     // 旧版用 'change' 事件只在松开时才触发,所以感觉"没有实时"——其实只是延迟了
