@@ -12,9 +12,11 @@ import {
 import {
     dom as stateDom,
     pixelationMode,
+    pixelBeadsPresetId,
     mergeThreshold,
     tempCanvas,
     tempCtx,
+    currentPalette,
     lastFileSize,
     setLastCellSize,
     setLastMergedGrid,
@@ -26,6 +28,10 @@ import {
     bgManualPoints,
     sampleMatchThr,
 } from './state.js';
+// 移植自 pixel-beads.com 的算法(完整 1:1 移植,文档见 algorithms/pixel-beads/README.md)
+import { extractCellFeatures, PRESETS } from './algorithms/pixel-beads/cell-extract.js';
+import { detectBackgroundMask } from './algorithms/pixel-beads/background-mask.js';
+import { assignBeads, resolveAssignmentsToBeads } from './algorithms/pixel-beads/pipeline.js';
 
 // 在指定 canvas 上绘制网格图(每格一色 + 网格线 + 色号文字)
 // 纯函数:不修改 window.*,仅消费入参
@@ -169,24 +175,77 @@ export function generatePerlerGrid() {
             .fill()
             .map(() => Array(cols).fill(null));
 
-        for (let row = 0; row < rows; row++) {
-            for (let col = 0; col < cols; col++) {
-                // 计算对应原始图像的区域
-                const srcX = Math.round(col * (imgW / cols));
-                const srcY = Math.round(row * (imgH / rows));
-                const srcW = Math.ceil(imgW / cols);
-                const srcH = Math.ceil(imgH / rows);
+        if (pixelationMode === 'pixel-beads') {
+            // pixel-beads 模式:1:1 移植 www.pixel-beads.com 算法
+            // 流程:背景 BFS → 提取 cell 特征 → K-means 聚类 → 色板匹配
+            stateDom.loadingProgress.textContent = '正在分析图片...';
 
-                // 提取代表色(Dominant/Average 由 pixelationMode 决定)并映射到拼豆色
-                const color = getBlockColorForGrid(
-                    srcX,
-                    srcY,
-                    srcW,
-                    srcH,
-                    pixelationMode,
-                    fullImageData
-                );
-                gridColors[row][col] = color;
+            const preset = PRESETS[pixelBeadsPresetId] || PRESETS.detailed;
+
+            // 1. 背景 mask(imageData 维度 BFS,见 detectBackgroundMask 注释)
+            const { mask: bgMask } = detectBackgroundMask({
+                imageData: fullImageData.data,
+                width: imgW,
+                height: imgH,
+                mode: 'auto',
+                preset,
+            });
+
+            // 2. 每 cell 特征(含 isOutline 判定)
+            const cellFeatures = extractCellFeatures({
+                imageData: fullImageData.data,
+                imageWidth: imgW,
+                imageHeight: imgH,
+                targetWidth: cols,
+                targetHeight: rows,
+                backgroundMask: bgMask,
+                preset,
+            });
+
+            // 3. K-means 聚类 + 色板匹配 + outline 强制最暗
+            const assignments = assignBeads({
+                cells: cellFeatures,
+                palette: currentPalette,
+                k: preset.maxColors,
+                outlineWeight: preset.outlineWeight,
+            });
+
+            // 4. 转回 gridColors 格式
+            const beads = resolveAssignmentsToBeads(assignments, currentPalette);
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    const idx = row * cols + col;
+                    const feature = cellFeatures[idx];
+                    const bead = beads[idx];
+                    if (!feature || !bead) {
+                        // 背景格(coverage 不足 / 调色板为空)
+                        gridColors[row][col] = { transparent: true };
+                    } else {
+                        gridColors[row][col] = bead;
+                    }
+                }
+            }
+        } else {
+            // legacy 模式:'dominant' / 'alpha-weighted'(保持原逻辑)
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    // 计算对应原始图像的区域
+                    const srcX = Math.round(col * (imgW / cols));
+                    const srcY = Math.round(row * (imgH / rows));
+                    const srcW = Math.ceil(imgW / cols);
+                    const srcH = Math.ceil(imgH / rows);
+
+                    // 提取代表色(Dominant/Average 由 pixelationMode 决定)并映射到拼豆色
+                    const color = getBlockColorForGrid(
+                        srcX,
+                        srcY,
+                        srcW,
+                        srcH,
+                        pixelationMode,
+                        fullImageData
+                    );
+                    gridColors[row][col] = color;
+                }
             }
         }
 

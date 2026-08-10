@@ -20,7 +20,8 @@ export let tempCanvas = null;
 export let tempCtx = null;
 export let currentMode = 'grid'; // 'grid' | 'fused'
 export let fuseEffect = 'plain'; // 'plain' | 'towel' | ...
-export let pixelationMode = 'dominant'; // 'dominant' | 'alpha-weighted'
+export let pixelationMode = 'dominant'; // 'dominant' | 'alpha-weighted' | 'pixel-beads'
+export let pixelBeadsPresetId = 'detailed'; // 'legacy' | 'zippland' | 'simplified' | 'standard' | 'detailed'
 export let mergeThreshold = 0;
 export let lastFileSize = 0;
 export let lastMergedGrid = null;
@@ -39,6 +40,13 @@ export const editorHistory = [];
 export const editorFuture = [];
 export let recentCodes = []; // 替换引用(mutator),不 mutate 内容
 export const pickerActive = { current: null };
+// ---- 扫描导入:错误格列表 ----
+// 元素:{ row, col, reason, candidates: string[] }
+export let scannerErrors = [];
+
+export function setScannerErrors(errs) {
+    scannerErrors = Array.isArray(errs) ? errs : [];
+}
 
 // ---- Mutator 函数 ----
 export function setPalette(p, id = 221) {
@@ -60,6 +68,9 @@ export function setFuseEffect(e) {
 }
 export function setPixelationMode(m) {
     pixelationMode = m;
+}
+export function setPixelBeadsPresetId(id) {
+    pixelBeadsPresetId = id;
 }
 export function setMergeThreshold(t) {
     mergeThreshold = t;

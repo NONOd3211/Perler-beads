@@ -43,8 +43,23 @@
             <select id="pixelationModeSelect">
                 <option value="dominant" selected>卡通 (主色)</option>
                 <option value="alpha-weighted">真实 (α-加权)</option>
+                <option value="pixel-beads">细节优先 (1:1 移植 pixel-beads.com)</option>
             </select>
-            <p class="section-hint">卡通模式适合海报/插画，α-加权模式适合写实照片。</p>
+            <p class="section-hint">卡通/真实 适合插画/写实;细节优先 对齐 pixel-beads.com 算法(K-means 聚类 + 暗部强制最暗)。</p>
+            <div id="pixelBeadsPresetBlock" style="display: none; margin-top: 8px;">
+                <label
+                    for="pixelBeadsPresetSelect"
+                    style="font-size: 10px; font-weight: bold; color: #5a4738; display: block; margin-bottom: 4px;"
+                    >图纸风格</label
+                >
+                <select id="pixelBeadsPresetSelect" style="width: 100%; padding: 4px 8px; border-radius: 6px; border: none; background: #f7f1e1; font-size: 11px;">
+                    <option value="legacy" title="基本不识别轮廓,效果接近原卡通模式">legacy · 旧版兼容</option>
+                    <option value="zippland" title="细节优先(详细),与 pixel-beads.com 默认一致">zippland · 细节优先(无聚类)</option>
+                    <option value="simplified" title="8 色,激进合并,适合图标/logo">simplified · 8 色精炼</option>
+                    <option value="standard" title="10 色,平衡质量与色板">standard · 10 色标准</option>
+                    <option value="detailed" selected title="16 色,保留更多细节(推荐)">detailed · 16 色细节</option>
+                </select>
+            </div>
         </div>
 
         <details class="advanced-settings">
@@ -110,6 +125,11 @@
                 <input type="file" id="fileInput" accept="image/*">
             </label>
             <p id="fileInfo"></p>
+        </div>
+
+        <div class="section-card scanner-import-section">
+            <h3 class="section-title"><span class="icon">🧩</span>从图纸扫描导入</h3>
+            <button id="scannerImportButton" class="btn-cream">上传已绘制的图纸截图</button>
         </div>
 
         <div class="preview-section">
@@ -193,6 +213,38 @@
                     <canvas id="zoomCanvas"></canvas>
                 </div>
                 <div class="modal-hint">提示：点击豆子可改色 · 滚轮/双指缩放 · 拖动平移</div>
+            </div>
+        </div>
+
+        <div id="scannerModal" class="modal-overlay">
+            <div class="modal-panel">
+                <h3 class="modal-title">扫描导入</h3>
+
+                <!-- Step 1: 上传 + 预览(v2:自动检测+识别在上传后立即触发) -->
+                <div id="scannerStep1" class="scanner-step">
+                    <label class="drop-zone" for="scannerFileInput" tabindex="0">
+                        <span class="drop-zone-icon">📷</span>
+                        <div class="drop-zone-text"><strong>点击选择</strong> 或拖拽图纸截图</div>
+                        <input type="file" id="scannerFileInput" accept="image/*">
+                    </label>
+                    <div class="scanner-preview-area">
+                        <canvas id="scannerPreviewCanvas" width="400" height="400" hidden></canvas>
+                    </div>
+                    <p class="modal-hint">上传后将自动检测网格并识别,无需手动校准</p>
+                    <div class="modal-actions">
+                        <button id="scannerCancelBtn1">取消</button>
+                    </div>
+                </div>
+
+                <!-- Step 3: 结果(v2:原 step2 校准已废弃) -->
+                <div id="scannerStep3" class="scanner-step" hidden>
+                    <p id="scannerResultSummary"></p>
+                    <p class="modal-hint">失败格已标红,点击格子手填</p>
+                    <div class="modal-actions">
+                        <button id="scannerCancelBtn3">取消</button>
+                        <button id="scannerApplyBtn">应用到编辑器 →</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
