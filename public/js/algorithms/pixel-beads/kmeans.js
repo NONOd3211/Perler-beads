@@ -21,7 +21,7 @@
 //   - weight:样本权重(α 加权时用 α,简单模式 = 1)
 //   - isOutline:暗部标记(影响初始化,首中心取 outline 中 L 最小的)
 
-import { oklabDistanceSquared } from './distance.js';
+import { labDistanceSquared } from './distance.js';
 
 const DEFAULT_MAX_ITER = 12;
 const DEFAULT_CONVERGE_THRESHOLD = 1e-4; // 平方距离单位(reference 同)
@@ -64,7 +64,7 @@ export function kmeansPlusPlusInit(samples, k) {
             // 找该样本到所有已选中心的最近距离
             let minDist = Infinity;
             for (const c of centers) {
-                const d = oklabDistanceSquared(s.lab, c);
+                const d = labDistanceSquared(s.lab, c);
                 if (d < minDist) minDist = d;
             }
             // 加权(参考 reference sn():c = s * weight,取最大 c 的样本)
@@ -120,7 +120,7 @@ export function kmeans(samples, k, maxIter = DEFAULT_MAX_ITER, threshold = DEFAU
             let minDist = Infinity;
             let bestK = 0;
             for (let kk = 0; kk < centers.length; kk++) {
-                const d = oklabDistanceSquared(s.lab, centers[kk]);
+                const d = labDistanceSquared(s.lab, centers[kk]);
                 if (d < minDist) {
                     minDist = d;
                     bestK = kk;
@@ -161,7 +161,7 @@ export function kmeans(samples, k, maxIter = DEFAULT_MAX_ITER, threshold = DEFAU
         // c. 收敛检测:max movement(平方)
         let maxMove = 0;
         for (let kk = 0; kk < centers.length; kk++) {
-            const d = oklabDistanceSquared(centers[kk], newCenters[kk]);
+            const d = labDistanceSquared(centers[kk], newCenters[kk]);
             if (d > maxMove) maxMove = d;
         }
         centers = newCenters;
