@@ -22,6 +22,7 @@ export let currentMode = 'grid'; // 'grid' | 'fused'
 export let fuseEffect = 'plain'; // 'plain' | 'towel' | ...
 export let pixelationMode = 'dominant'; // 'dominant' | 'alpha-weighted' | 'pixel-beads'
 export let pixelBeadsPresetId = 'detailed'; // 'legacy' | 'zippland' | 'simplified' | 'standard' | 'detailed'
+export let maxColorsOverride = null; // null = 用 preset 默认; number = 用户覆盖
 export let mergeThreshold = 0;
 export let lastFileSize = 0;
 export let lastMergedGrid = null;
@@ -71,6 +72,9 @@ export function setPixelationMode(m) {
 }
 export function setPixelBeadsPresetId(id) {
     pixelBeadsPresetId = id;
+}
+export function setMaxColorsOverride(n) {
+    maxColorsOverride = n;
 }
 export function setMergeThreshold(t) {
     mergeThreshold = t;

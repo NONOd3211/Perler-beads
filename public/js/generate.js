@@ -13,6 +13,7 @@ import {
     dom as stateDom,
     pixelationMode,
     pixelBeadsPresetId,
+    maxColorsOverride,
     mergeThreshold,
     tempCanvas,
     tempCtx,
@@ -203,10 +204,12 @@ export function generatePerlerGrid() {
             });
 
             // 3. K-means 聚类 + 色板匹配 + outline 强制最暗
+            // maxColorsOverride 优先,否则用 preset 默认(legacy/zippland = null = 全 palette)
+            const effectiveK = maxColorsOverride ?? preset.maxColors ?? currentPalette.length;
             const assignments = assignBeads({
                 cells: cellFeatures,
                 palette: currentPalette,
-                k: preset.maxColors,
+                k: effectiveK,
                 outlineWeight: preset.outlineWeight,
             });
 

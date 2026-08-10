@@ -8,6 +8,8 @@ import {
     setPixelationMode,
     pixelBeadsPresetId,
     setPixelBeadsPresetId,
+    maxColorsOverride,
+    setMaxColorsOverride,
     currentPalette,
     setPalette,
     setFuseEffect,
@@ -329,6 +331,31 @@ export function attachEventsListeners(win = window) {
     if (pixelBeadsPresetSelect) {
         pixelBeadsPresetSelect.addEventListener('change', async function () {
             setPixelBeadsPresetId(this.value);
+            // 切预设时重置 maxColors 滑块到预设默认
+            setMaxColorsOverride(null);
+            if (stateDom.maxColorsSlider && stateDom.maxColorsValue) {
+                const presetDefaults = { legacy: 50, zippland: 50, simplified: 8, standard: 10, detailed: 16 };
+                const defaultVal = presetDefaults[this.value] ?? 16;
+                stateDom.maxColorsSlider.value = defaultVal;
+                stateDom.maxColorsValue.textContent = defaultVal;
+            }
+            if (currentImage) {
+                const { generatePerlerGrid } = await import('./generate.js');
+                generatePerlerGrid();
+            }
+        });
+    }
+
+    // ---- 色彩数量滑块(覆盖预设默认) ----
+    const maxColorsSlider = doc.getElementById('maxColorsSlider');
+    const maxColorsValue = doc.getElementById('maxColorsValue');
+    if (maxColorsSlider) {
+        maxColorsSlider.addEventListener('input', function () {
+            const v = parseInt(this.value);
+            if (maxColorsValue) maxColorsValue.textContent = v;
+            setMaxColorsOverride(v);
+        });
+        maxColorsSlider.addEventListener('change', async function () {
             if (currentImage) {
                 const { generatePerlerGrid } = await import('./generate.js');
                 generatePerlerGrid();

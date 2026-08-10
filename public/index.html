@@ -59,6 +59,27 @@
                     <option value="standard" title="10 色,平衡质量与色板">standard · 10 色标准</option>
                     <option value="detailed" selected title="16 色,保留更多细节(推荐)">detailed · 16 色细节</option>
                 </select>
+                <div style="margin-top: 10px;">
+                    <label
+                        for="maxColorsSlider"
+                        style="font-size: 10px; font-weight: bold; color: #5a4738; display: flex; justify-content: space-between; margin-bottom: 4px;"
+                    >
+                        <span>色彩数量</span>
+                        <span id="maxColorsValue">16</span>
+                    </label>
+                    <input
+                        type="range"
+                        id="maxColorsSlider"
+                        min="4"
+                        max="50"
+                        step="1"
+                        value="16"
+                        style="width: 100%; accent-color: #168b7d;"
+                    />
+                    <small style="display: block; margin-top: 2px; font-size: 9px; color: #8a7768;"
+                        >覆盖预设默认,值越大颜色越丰富(改预设会重置为预设值)。</small
+                    >
+                </div>
             </div>
         </div>
 

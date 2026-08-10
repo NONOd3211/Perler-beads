@@ -43,6 +43,8 @@ export function attachCore(win = window) {
         pixelationModeSelect: win.document.getElementById('pixelationModeSelect'),
         pixelBeadsPresetBlock: win.document.getElementById('pixelBeadsPresetBlock'),
         pixelBeadsPresetSelect: win.document.getElementById('pixelBeadsPresetSelect'),
+        maxColorsSlider: win.document.getElementById('maxColorsSlider'),
+        maxColorsValue: win.document.getElementById('maxColorsValue'),
         mergeSlider: win.document.getElementById('mergeSlider'),
         mergeValue: win.document.getElementById('mergeValue'),
         closeColorList: win.document.getElementById('closeColorList'),
