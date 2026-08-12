@@ -10,13 +10,15 @@ import {
     setPixelBeadsPresetId,
     maxColorsOverride,
     setMaxColorsOverride,
+    setPresampleFactor,
+    setCellShape,
+    setGridLineWidth,
+    setExportBackground,
     currentPalette,
     setPalette,
     setFuseEffect,
     lastMergedGrid,
     setLastMergedGrid,
-    lastPreMergeGrid,
-    setMergeThreshold,
     editorHistory,
     recentCodes,
     pickerActive,
@@ -484,29 +486,60 @@ export function attachEventsListeners(win = window) {
             const v = parseInt(this.value);
             if (maxColorsValue) maxColorsValue.textContent = v;
             setMaxColorsOverride(v);
-        });
-        maxColorsSlider.addEventListener('change', async function () {
-            if (currentImage) {
-                const { generatePerlerGrid } = await import('./generate.js');
-                generatePerlerGrid();
-            }
+            if (currentImage) markDirty();
         });
     }
 
-    // ---- merge slider(拖动时实时生效,边拖边重算) ----
-    // 旧版用 'change' 事件只在松开时才触发,所以感觉"没有实时"——其实只是延迟了
-    // 改用 'input' 事件,边拖边更新;同时改成统一由 input 触发
-    const mergeSlider = doc.getElementById('mergeSlider');
-    const mergeValueLabel = doc.getElementById('mergeValue');
-    function onMergeSliderChange() {
-        setMergeThreshold(+this.value);
-        mergeValueLabel.textContent = this.value;
-        if (currentImage && lastPreMergeGrid) {
-            recomputePreservingRefine('threshold');
-        }
+    // ---- 预采样倍率(关闭/2x/4x/8x) ----
+    if (stateDom.presampleFactorSelect) {
+        stateDom.presampleFactorSelect.addEventListener('change', function () {
+            setPresampleFactor(parseInt(this.value));
+            if (currentImage) markDirty();
+        });
     }
-    mergeSlider.addEventListener('input', onMergeSliderChange);
-    mergeSlider.addEventListener('change', onMergeSliderChange);
+
+    // ---- 导出样式 3 控件(柔光感 1:1 移植自 pixel-beads.com) ----
+    // 改任一项都只是 markDirty,等用户点 🔄 重新生成才生效
+    if (stateDom.cellShapeSelect) {
+        stateDom.cellShapeSelect.addEventListener('change', function () {
+            setCellShape(this.value);
+            if (currentImage) markDirty();
+        });
+    }
+    if (stateDom.gridLineWidthSelect) {
+        stateDom.gridLineWidthSelect.addEventListener('change', function () {
+            setGridLineWidth(this.value);
+            if (currentImage) markDirty();
+        });
+    }
+    if (stateDom.exportBackgroundSelect) {
+        stateDom.exportBackgroundSelect.addEventListener('change', function () {
+            setExportBackground(this.value);
+            if (currentImage) markDirty();
+        });
+    }
+
+    // ---- 高级 preset radio 同步(从"高级"区域 radio 改值 → 触发 select change 流程) ----
+    // 普通用户只看到 select(zippland/legacy),但 advanced radio 选 simplified/standard/detailed
+    // 时也走 setPixelBeadsPresetId 路径
+    document.addEventListener('change', function (e) {
+        if (e.target && e.target.name === 'advancedPreset') {
+            const sel = stateDom.pixelBeadsPresetSelect;
+            if (sel) {
+                sel.value = e.target.value;
+                sel.dispatchEvent(new Event('change'));
+            }
+        }
+    });
+    // select 改变时,同步 radio 状态(单选互斥:zippland/legacy 时所有 radio uncheck)
+    if (stateDom.pixelBeadsPresetSelect) {
+        stateDom.pixelBeadsPresetSelect.addEventListener('change', function () {
+            const v = this.value;
+            document.querySelectorAll('input[name="advancedPreset"]').forEach((r) => {
+                r.checked = r.value === v;
+            });
+        });
+    }
 
     // ---- canvas 点击:manual bg 模式优先加采样点,否则打开选色浮窗 ----
     // v2:manual 模式点击在拼豆图纸上(不是原图),坐标用 col/row 而非 v1 的 nx/ny

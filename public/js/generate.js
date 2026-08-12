@@ -14,6 +14,7 @@ import {
     pixelationMode,
     pixelBeadsPresetId,
     maxColorsOverride,
+    presampleFactor,
     mergeThreshold,
     tempCanvas,
     tempCtx,
@@ -28,6 +29,9 @@ import {
     bgThreshold,
     bgManualPoints,
     sampleMatchThr,
+    cellShape,
+    gridLineWidth,
+    exportBackground,
 } from './state.js';
 // 移植自 pixel-beads.com 的算法(完整 1:1 移植,文档见 algorithms/pixel-beads/README.md)
 import { extractCellFeatures, PRESETS } from './algorithms/pixel-beads/cell-extract.js';
@@ -35,8 +39,22 @@ import { detectBackgroundMask } from './algorithms/pixel-beads/background-mask.j
 import { assignBeads, resolveAssignmentsToBeads } from './algorithms/pixel-beads/pipeline.js';
 
 // 在指定 canvas 上绘制网格图(每格一色 + 网格线 + 色号文字)
-// 纯函数:不修改 window.*,仅消费入参
-export function drawGrid(ctx, grid, cols, rows, cellSize) {
+// 1:1 移植自 pixel-beads.com 的 bead-grid-canvas.js 渲染逻辑:
+//   - cellShape='square' → 填色方块,pindou 默认(铺满整个网格,真实拼豆图纸的样子)
+//   - cellShape='round'  → arc + fill(圆珠,圆与圆天然留缝 → 柔光感主因)
+//   - cellShape='hollow' → 描边圆(lineWidth = max(2, r*0.25))
+//   - 文字 shadowBlur=1 + offsetY=1 + rgba(0,0,0,0.35) 阴影(柔光感细节)
+//   - 网格线 gridLineWidth: 'none' | 'small'(1) | 'big'(3)
+// 纯函数:不修改 window.*,仅消费入参; cellShape/gridLineWidth 由 caller 传入
+export function drawGrid(ctx, grid, cols, rows, cellSize, options = {}) {
+    const cellShape = options.cellShape || 'square';
+    const gridLineWidth = options.gridLineWidth || 'small';
+    // pixel-beads: 0=none, 1=small, 3=big
+    const lineWidthPx = gridLineWidth === 'none' ? 0 : gridLineWidth === 'big' ? 3 : 1;
+    const re = cellShape === 'round' || cellShape === 'hollow';
+    const we = cellShape === 'hollow';
+    const d = cellSize / 2;
+
     for (let row = 0; row < rows; row++) {
         for (let col = 0; col < cols; col++) {
             const x = Math.round(col * cellSize);
@@ -48,45 +66,72 @@ export function drawGrid(ctx, grid, cols, rows, cellSize) {
             // 透明格跳过填色和文字
             if (color.transparent) continue;
 
-            ctx.fillStyle = color.hex;
-            ctx.fillRect(x, y, sz, sz);
+            if (we /* hollow */) {
+                // 空心圆(线宽 = max(2, r*0.25),与 pixel-beads 1:1)
+                ctx.strokeStyle = color.hex;
+                ctx.lineWidth = Math.max(2, cellSize * 0.25);
+                ctx.beginPath();
+                ctx.arc(x + d, y + d, (cellSize - ctx.lineWidth) / 2, 0, Math.PI * 2);
+                ctx.stroke();
+            } else if (re /* round */) {
+                // 实心圆(默认 — 圆与圆之间留缝 = 柔光主因)
+                ctx.fillStyle = color.hex;
+                ctx.beginPath();
+                ctx.arc(x + d, y + d, d, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                // 实心方块(pindou 旧行为)
+                ctx.fillStyle = color.hex;
+                ctx.fillRect(x, y, sz, sz);
+            }
 
-            // 计算文本颜色(根据背景色亮度选择黑白)
-            const brightness = (color.r * 299 + color.g * 587 + color.b * 114) / 1000;
-            const textColor = brightness > 128 ? '#000000' : '#FFFFFF';
-            const strokeColor = brightness > 128 ? '#FFFFFF' : '#000000';
+            // 色号文字(在 cellSize >= 8 时显示,与原版一致)
+            if (sz >= 8) {
+                // 计算文本颜色(根据背景色亮度选择黑白)
+                const brightness = (color.r * 299 + color.g * 587 + color.b * 114) / 1000;
+                const textColor = brightness > 128 ? '#000000' : '#FFFFFF';
 
-            // 设置文本样式,调小字体大小以确保完全显示
-            const fontSize = Math.max(7, Math.min(10, Math.floor(sz * 0.4)));
-            ctx.font = fontSize + 'px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
+                // 字体大小:与 pixel-beads 1:1(r<12 用 0.5 倍,否则 0.45 倍,最小 6/8)
+                const fontSize = sz < 12
+                    ? Math.max(6, Math.floor(sz * 0.5))
+                    : Math.max(8, Math.floor(sz * 0.45));
+                ctx.font = `800 ${fontSize}px sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
 
-            // 绘制文本描边,提高清晰度
-            ctx.strokeStyle = strokeColor;
-            ctx.lineWidth = 0.5;
-            ctx.strokeText(color.code, x + sz / 2, y + sz / 2);
+                // 文字加 1px 阴影(柔光感的最后细节,1:1 移植自 pixel-beads)
+                ctx.shadowColor = 'rgba(0,0,0,0.35)';
+                ctx.shadowBlur = 1;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 1;
+                ctx.fillStyle = textColor;
+                ctx.fillText(BeadColor.getDisplayCode(color), x + d, y + d);
 
-            // 绘制文本
-            ctx.fillStyle = textColor;
-            ctx.fillText(BeadColor.getDisplayCode(color), x + sz / 2, y + sz / 2);
+                // 重置 shadow(避免影响后续 cell)
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+            }
         }
     }
 
-    // 灰色网格线
-    ctx.strokeStyle = '#888888';
-    ctx.lineWidth = 1.5;
-    for (let x = 0; x <= cols * cellSize; x += cellSize) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, rows * cellSize);
-        ctx.stroke();
-    }
-    for (let y = 0; y <= rows * cellSize; y += cellSize) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(cols * cellSize, y);
-        ctx.stroke();
+    // 网格线(0=无, 1=细, 3=粗; pixel-beads 同款)
+    if (lineWidthPx > 0) {
+        ctx.strokeStyle = '#888888';
+        ctx.lineWidth = lineWidthPx;
+        for (let x = 0; x <= cols * cellSize; x += cellSize) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, rows * cellSize);
+            ctx.stroke();
+        }
+        for (let y = 0; y <= rows * cellSize; y += cellSize) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(cols * cellSize, y);
+            ctx.stroke();
+        }
     }
 }
 
@@ -119,15 +164,17 @@ function drawBgOverlay(ctx, grid, cols, rows, cellSize, manualPoints, showMarker
     }
 }
 
-export function generatePerlerGrid() {
+export async function generatePerlerGrid() {
     stateDom.loadingOverlay.style.display = 'flex';
     stateDom.loadingProgress.textContent = '正在提取像素代表色...';
 
     try {
         const ctx = stateDom.perlerCanvas.getContext('2d');
-        const selectedGridSize = parseInt(
-            document.querySelector('input[name="density"]:checked').value
-        );
+        // 网格尺寸:优先从滑块读(1-120),无滑块时回退 radio
+        const gridSizeSlider = document.getElementById('gridSizeSlider');
+        const selectedGridSize = gridSizeSlider
+            ? parseInt(gridSizeSlider.value)
+            : parseInt(document.querySelector('input[name="density"]:checked')?.value || '52');
 
         // 用 naturalWidth/naturalHeight 而不是 width/height:
         // .width/.height 是 CSS 渲染后的尺寸(被 max-width:300px 限制),
@@ -160,7 +207,9 @@ export function generatePerlerGrid() {
 
         // 一次性读整图到 ImageData,主循环里 subarray 切片(纯内存),
         // 避免每个 cell 一次 getImageData 跨进程读取(10816 cell 时 N 次降到 1 次)。
-        const fullImageData = tempCtx.getImageData(0, 0, imgW, imgH);
+        let fullImageData = tempCtx.getImageData(0, 0, imgW, imgH);
+        let procW = imgW;
+        let procH = imgH;
 
         const cellSize = fixedCellSize;
 
@@ -183,11 +232,39 @@ export function generatePerlerGrid() {
 
             const preset = PRESETS[pixelBeadsPresetId] || PRESETS.detailed;
 
+            // ===== 预采样(仅 pixel-beads 模式)= 避免 cell 内平均把抗锯齿中间色混进结果 =====
+            // factor=1 不采样(原图),默认 4(4x 目标网格),更高 = 更强离散化。
+            // 只在 pixel-beads 分支执行,不影响 dominant / alpha-weighted 模式
+            // (它们的 cell 取色按 imgW/imgH 比例映射,需要全分辨率 fullImageData)。
+            if (presampleFactor > 1) {
+                const { presampleNearest, presampleSize } = await import(
+                    './algorithms/pixel-beads/presample.js'
+                );
+                // 下限保护:不要小于目标网格,否则 cell-extract 会"反向"放大
+                const targetW = Math.max(cols, 4);
+                const targetH = Math.max(rows, 4);
+                const factorSize = presampleSize(imgW, imgH, presampleFactor);
+                const dstW = Math.max(targetW, factorSize.width);
+                const dstH = Math.max(targetH, factorSize.height);
+                const downsampled = presampleNearest(
+                    fullImageData.data,
+                    imgW,
+                    imgH,
+                    dstW,
+                    dstH
+                );
+                // 转成新的 ImageData(allocate 新 buffer)
+                fullImageData = new ImageData(downsampled, dstW, dstH);
+                procW = dstW;
+                procH = dstH;
+                stateDom.loadingProgress.textContent = `预采样 ${procW}×${procH} (${presampleFactor}x)...`;
+            }
+
             // 1. 背景 mask(imageData 维度 BFS,见 detectBackgroundMask 注释)
             const { mask: bgMask } = detectBackgroundMask({
                 imageData: fullImageData.data,
-                width: imgW,
-                height: imgH,
+                width: procW,
+                height: procH,
                 mode: 'auto',
                 preset,
             });
@@ -195,8 +272,8 @@ export function generatePerlerGrid() {
             // 2. 每 cell 特征(含 isOutline 判定)
             const cellFeatures = extractCellFeatures({
                 imageData: fullImageData.data,
-                imageWidth: imgW,
-                imageHeight: imgH,
+                imageWidth: procW,
+                imageHeight: procH,
                 targetWidth: cols,
                 targetHeight: rows,
                 backgroundMask: bgMask,
@@ -316,16 +393,25 @@ export function generatePerlerGrid() {
         stateDom.loadingProgress.textContent = '正在绘制网格...';
 
         // 第四步:双 canvas 绘制
-        // exportCanvas = 干净 grid(无 overlay),保证 PNG 导出背景自然透明
+        // exportCanvas = 干净 grid(无 overlay),PNG 导出用;可选手动填米色背景
         // perlerCanvas = 干净 grid + 半透明灰覆盖(背景格)+ manual 模式点击圆圈
+        const drawOptions = {
+            cellShape,
+            gridLineWidth,
+        };
         if (stateDom.exportCanvas) {
             stateDom.exportCanvas.width = canvasWidth;
             stateDom.exportCanvas.height = canvasHeight;
             const exportCtx = stateDom.exportCanvas.getContext('2d');
             exportCtx.clearRect(0, 0, canvasWidth, canvasHeight);
-            drawGrid(exportCtx, mergedGrid, cols, rows, cellSize);
+            // 米色背景(柔光感第三要素 — 1:1 移植自 pixel-beads 的 #F7F1E1)
+            if (exportBackground === 'cream') {
+                exportCtx.fillStyle = '#F7F1E1';
+                exportCtx.fillRect(0, 0, canvasWidth, canvasHeight);
+            }
+            drawGrid(exportCtx, mergedGrid, cols, rows, cellSize, drawOptions);
         }
-        drawGrid(ctx, mergedGrid, cols, rows, cellSize);
+        drawGrid(ctx, mergedGrid, cols, rows, cellSize, drawOptions);
         drawBgOverlay(
             ctx,
             mergedGrid,
