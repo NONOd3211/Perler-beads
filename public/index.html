@@ -27,15 +27,28 @@
         </div>
 
         <div class="section-card density-section">
-            <h3 class="section-title"><span class="icon">🔲</span>网格尺寸</h3>
-            <label class="density-option">
-                <input type="radio" name="density" value="52" checked>
-                52×52 标准格
+            <h3 class="section-title"><span class="icon">🔲</span>网格尺寸(横向)</h3>
+            <label
+                for="gridSizeSlider"
+                style="font-size: 10px; font-weight: bold; color: #5a4738; display: flex; justify-content: space-between; margin-bottom: 4px;"
+            >
+                <span>每行颗数</span>
+                <span id="gridSizeValue">52</span>
             </label>
-            <label class="density-option">
-                <input type="radio" name="density" value="104">
-                104×104 精细格
-            </label>
+            <input
+                type="range"
+                id="gridSizeSlider"
+                min="1"
+                max="120"
+                step="1"
+                value="52"
+                style="width: 100%; accent-color: #168b7d;"
+            />
+            <small
+                id="gridSizeHint"
+                style="display: block; margin-top: 4px; font-size: 10px; color: #5a4738;"
+                >52×52 标准格(高度按图片比例自动算,单边最大 200 颗)</small
+            >
         </div>
 
         <div class="section-card pixelation-section">
@@ -53,12 +66,128 @@
                     >图纸风格</label
                 >
                 <select id="pixelBeadsPresetSelect" style="width: 100%; padding: 4px 8px; border-radius: 6px; border: none; background: #f7f1e1; font-size: 11px;">
+                    <option value="zippland" selected title="pixel-beads.com 当前默认。不识别 outline/背景,不强制最暗(推荐)">zippland · 细节优先(pixel-beads 当前默认)</option>
                     <option value="legacy" title="基本不识别轮廓,效果接近原卡通模式">legacy · 旧版兼容</option>
-                    <option value="zippland" title="细节优先(详细),与 pixel-beads.com 默认一致">zippland · 细节优先(无聚类)</option>
-                    <option value="simplified" title="8 色,激进合并,适合图标/logo">simplified · 8 色精炼</option>
-                    <option value="standard" title="10 色,平衡质量与色板">standard · 10 色标准</option>
-                    <option value="detailed" selected title="16 色,保留更多细节(推荐)">detailed · 16 色细节</option>
                 </select>
+                <small style="display: block; margin-top: 2px; font-size: 9px; color: #8a7768;"
+                    >其余 3 档(启用 background BFS / outline 强制最暗 / 去斑)仅适合线稿/纯色块图,真实照片会失真。需要时点下方"高级"展开。</small
+                >
+                <details style="margin-top: 6px;">
+                    <summary style="font-size: 10px; color: #5a4738; cursor: pointer; user-select: none;"
+                        >⚠️ 高级 preset(实验,可能偏深)</summary
+                    >
+                    <div style="margin-top: 6px; display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 10px; color: #5a4738; display: flex; align-items: center; gap: 6px;">
+                            <input type="radio" name="advancedPreset" value="simplified">
+                            <span>simplified · 8 色精炼</span>
+                        </label>
+                        <label style="font-size: 10px; color: #5a4738; display: flex; align-items: center; gap: 6px;">
+                            <input type="radio" name="advancedPreset" value="standard">
+                            <span>standard · 10 色标准</span>
+                        </label>
+                        <label style="font-size: 10px; color: #5a4738; display: flex; align-items: center; gap: 6px;">
+                            <input type="radio" name="advancedPreset" value="detailed">
+                            <span>detailed · 16 色细节</span>
+                        </label>
+                    </div>
+                </details>
+                <div style="margin-top: 10px;">
+                    <label
+                        for="maxColorsSlider"
+                        style="font-size: 10px; font-weight: bold; color: #5a4738; display: flex; justify-content: space-between; margin-bottom: 4px;"
+                    >
+                        <span>色彩数量</span>
+                        <span id="maxColorsValue">16</span>
+                    </label>
+                    <input
+                        type="range"
+                        id="maxColorsSlider"
+                        min="4"
+                        max="50"
+                        step="1"
+                        value="16"
+                        style="width: 100%; accent-color: #168b7d;"
+                    />
+                    <small style="display: block; margin-top: 2px; font-size: 9px; color: #8a7768;"
+                        >覆盖预设默认,值越大颜色越丰富(改预设会重置为预设值)。</small
+                    >
+                </div>
+
+                <div style="margin-top: 10px;">
+                    <label
+                        for="presampleFactorSelect"
+                        style="font-size: 10px; font-weight: bold; color: #5a4738; display: flex; justify-content: space-between; margin-bottom: 4px;"
+                    >
+                        <span>预采样倍率</span>
+                    </label>
+                    <select
+                        id="presampleFactorSelect"
+                        style="width: 100%; padding: 4px 6px; font-size: 11px; border: 1px solid var(--c-cream-border); border-radius: 4px; background: white; color: #5a4738;"
+                    >
+                        <option value="1">关闭 (原图)</option>
+                        <option value="2">2x (轻度)</option>
+                        <option value="4" selected>4x (推荐)</option>
+                        <option value="8">8x (强)</option>
+                    </select>
+                    <small style="display: block; margin-top: 2px; font-size: 9px; color: #8a7768;"
+                        >先用最近邻把图片降到小尺寸再识别颜色,避免 cell 平均把抗锯齿中间色混进结果。</small
+                    >
+                </div>
+            </div>
+        </div>
+
+        <div class="section-card export-style-section">
+            <h3 class="section-title"><span class="icon">✨</span>导出样式</h3>
+            <p class="section-hint">米色背景 + 文字阴影来自 pixel-beads.com,珠子形状默认走 pindou 原行为(铺满方格,真实拼豆图纸的样子)。改完点 🔄 重新生成。</p>
+
+            <div style="margin-bottom: 10px;">
+                <label
+                    for="cellShapeSelect"
+                    style="font-size: 10px; font-weight: bold; color: #5a4738; display: block; margin-bottom: 4px;"
+                    >珠子形状</label
+                >
+                <select
+                    id="cellShapeSelect"
+                    style="width: 100%; padding: 4px 6px; font-size: 11px; border: 1px solid var(--c-cream-border); border-radius: 4px; background: white; color: #5a4738;"
+                >
+                    <option value="square" selected>方块(铺满,默认)</option>
+                    <option value="round">圆珠(柔光感)</option>
+                    <option value="hollow">空心圆(线稿风)</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom: 10px;">
+                <label
+                    for="gridLineWidthSelect"
+                    style="font-size: 10px; font-weight: bold; color: #5a4738; display: block; margin-bottom: 4px;"
+                    >网格线</label
+                >
+                <select
+                    id="gridLineWidthSelect"
+                    style="width: 100%; padding: 4px 6px; font-size: 11px; border: 1px solid var(--c-cream-border); border-radius: 4px; background: white; color: #5a4738;"
+                >
+                    <option value="none">无(最柔)</option>
+                    <option value="small" selected>细(推荐)</option>
+                    <option value="big">粗(原 pindou)</option>
+                </select>
+            </div>
+
+            <div>
+                <label
+                    for="exportBackgroundSelect"
+                    style="font-size: 10px; font-weight: bold; color: #5a4738; display: block; margin-bottom: 4px;"
+                    >导出背景</label
+                >
+                <select
+                    id="exportBackgroundSelect"
+                    style="width: 100%; padding: 4px 6px; font-size: 11px; border: 1px solid var(--c-cream-border); border-radius: 4px; background: white; color: #5a4738;"
+                >
+                    <option value="cream" selected>米色 #F7F1E1(柔光推荐)</option>
+                    <option value="transparent">透明 PNG</option>
+                </select>
+                <small style="display: block; margin-top: 4px; font-size: 9px; color: #8a7768;"
+                    >米色 = pixel-beads 视觉,圆珠放米色上整体最柔;透明 = 方便后期合成到其他背景。</small
+                >
             </div>
         </div>
 
@@ -95,12 +224,6 @@
                         <span class="bg-hint">在右侧拼豆图纸上点击背景 cell</span>
                     </div>
                 </div>
-
-                <div class="section-card merge-section" style="margin: 0;">
-                    <h3 class="section-title"><span class="icon">🔀</span>颜色合并阈值: <span id="mergeValue">0</span></h3>
-                    <input type="range" id="mergeSlider" min="0" max="100" step="1" value="0">
-                    <small>值越大色块越纯净，细节越少。0 = 不合并(只靠去斑清理噪声)。</small>
-                </div>
             </div>
         </details>
 
@@ -134,7 +257,13 @@
 
         <div class="preview-section">
             <div class="preview">
-                <h3><span class="icon">🖼️</span>原始图片</h3>
+                <div class="preview-header">
+                    <h3><span class="icon">🖼️</span>原始图片</h3>
+                    <div class="preview-header-actions">
+                        <button id="selectRangeButton" class="btn-cream" disabled title="在原图上拖动鼠标自由框选要生成的范围">✂️ 自由选择生成范围</button>
+                        <button id="regenerateButton" class="btn-primary" disabled title="应用当前所有参数,重新生成拼豆图纸">🔄 重新生成<span class="dirty-dot" hidden>●</span></button>
+                    </div>
+                </div>
                 <div class="preview-stage">
                     <img id="originalImage" src="" alt="原始图片">
                     <div class="preview-placeholder">📷</div>

@@ -6,36 +6,36 @@
 //   - Y() 函数(line 162-176) = 在 palette 中找最近(reference 简版,K-means++ init)
 //
 // 工作流程:
-//   1. 收集非空 cells,转 Oklab,加权(weight = max(0.01, coverage) * outlineWeight(if outline))
+//   1. 收集非空 cells,转 CIE Lab,加权(weight = max(0.01, coverage) * outlineWeight(if outline))
 //   2. K = min(maxColors, palette.length, cells.length)
-//   3. K-means 聚类(Oklab 距离,12 次迭代)
-//   4. 调色板转 Oklab
+//   3. K-means 聚类(Lab 距离,12 次迭代)
+//   4. 调色板转 Lab
 //   5. K-means 中心 → 最近 palette 颜色(用作"实际使用调色板子集")
 //   6. 分配每 cell:
 //      - outline → 强制使用 palette 中 L 最小的 bead
 //      - 非 outline → 在子集中找最近 bead
 //
-// 色彩空间:Oklab(沿用 pindou 偏好)
-// 与 reference 差异:reference 用 CIE Lab,我们用 Oklab(只是色彩空间切换,算法逻辑 1:1)
+// 色彩空间:CIE Lab D65(1:1 移植 reference,reference 用 R()/T()/Y() 都是 Lab)
+// 与 pindou 偏好 Oklab 的差异:先 1:1 移植,后续再优化时切回 Oklab
 
-import { rgbToOklab } from '../../oklab.js';
-import { oklabDistance, oklabDistanceSquared } from './distance.js';
+import { rgbToLab } from './lab.js';
+import { labDistance, labDistanceSquared } from './distance.js';
 import { kmeans } from './kmeans.js';
 
 const MIN_WEIGHT = 0.01; // 避免 weight=0 导致空簇
 
 // ============================================================================
-// Palette 转换:缓存 Oklab 坐标,避免重复转换
+// Palette 转换:缓存 Lab 坐标,避免重复转换
 // ============================================================================
 
 /**
- * 把 palette 数组转成 Oklab 形式(带 id)
+ * 把 palette 数组转成 CIE Lab 形式(带 id)
  * 输入:palette = [{ r, g, b, code, ... }]
  * 输出:[{ id, L, a, b }](id 默认 = code,如有则用 id)
  */
-function paletteToOklab(palette) {
+function paletteToLab(palette) {
     return palette.map((c) => {
-        const lab = rgbToOklab(c.r, c.g, c.b);
+        const lab = rgbToLab(c.r, c.g, c.b);
         return {
             id: c.id || c.code,
             L: lab.L,
@@ -46,14 +46,14 @@ function paletteToOklab(palette) {
 }
 
 /**
- * 在 Oklab 化的 palette 中找最近 bead 的 id
+ * 在 Lab 化的 palette 中找最近 bead 的 id
  * 精确匹配早退(ΔE = 0)
  */
 function findClosestPaletteId(targetLab, paletteLab) {
     let minDist = Infinity;
     let bestId = paletteLab[0].id;
     for (const p of paletteLab) {
-        const d = oklabDistanceSquared(targetLab, p);
+        const d = labDistanceSquared(targetLab, p);
         if (d === 0) return p.id; // 精确匹配
         if (d < minDist) {
             minDist = d;
@@ -88,12 +88,12 @@ export function assignBeads({ cells, palette, k, outlineWeight = 1 }) {
     const N = cells.length;
     const result = new Array(N).fill('');
 
-    // 1. 收集非空 cells,转 Oklab,加权
+    // 1. 收集非空 cells,转 Lab,加权
     const samples = [];
     for (let i = 0; i < N; i++) {
         const c = cells[i];
         if (!c) continue;
-        const lab = rgbToOklab(c.rgb.r, c.rgb.g, c.rgb.b);
+        const lab = rgbToLab(c.rgb.r, c.rgb.g, c.rgb.b);
         const weight = Math.max(MIN_WEIGHT, c.coverage) * (c.isOutline ? outlineWeight : 1);
         samples.push({
             index: i,
@@ -111,8 +111,8 @@ export function assignBeads({ cells, palette, k, outlineWeight = 1 }) {
     // 3. K-means 聚类
     const centers = kmeans(samples, effectiveK, 12, 1e-4);
 
-    // 4. 调色板转 Oklab
-    const paletteLab = paletteToOklab(palette);
+    // 4. 调色板转 Lab
+    const paletteLab = paletteToLab(palette);
 
     // 5. K-means 中心 → 最近 palette 颜色 → 子集
     const usedIds = new Set(centers.map((center) => findClosestPaletteId(center, paletteLab)));

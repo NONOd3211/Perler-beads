@@ -21,7 +21,9 @@ export let tempCtx = null;
 export let currentMode = 'grid'; // 'grid' | 'fused'
 export let fuseEffect = 'plain'; // 'plain' | 'towel' | ...
 export let pixelationMode = 'dominant'; // 'dominant' | 'alpha-weighted' | 'pixel-beads'
-export let pixelBeadsPresetId = 'detailed'; // 'legacy' | 'zippland' | 'simplified' | 'standard' | 'detailed'
+export let pixelBeadsPresetId = 'zippland'; // 'legacy' | 'zippland' | 'simplified' | 'standard' | 'detailed'
+export let maxColorsOverride = null; // null = 用 preset 默认; number = 用户覆盖
+export let presampleFactor = 4; // 预采样倍率(1=不采样, 4=4x, 8=8x); 0/1=关闭
 export let mergeThreshold = 0;
 export let lastFileSize = 0;
 export let lastMergedGrid = null;
@@ -71,6 +73,12 @@ export function setPixelationMode(m) {
 }
 export function setPixelBeadsPresetId(id) {
     pixelBeadsPresetId = id;
+}
+export function setMaxColorsOverride(n) {
+    maxColorsOverride = n;
+}
+export function setPresampleFactor(f) {
+    presampleFactor = Math.max(1, parseInt(f) || 1);
 }
 export function setMergeThreshold(t) {
     mergeThreshold = t;
@@ -133,4 +141,26 @@ export function clearManualRefine() {
     editorFuture.length = 0;
     pickerActive.current = null;
     recentCodes = [];
+}
+
+// 自定义网格尺寸(1-120,默认 52),用滑块覆盖原 radio
+
+// ---- 导出样式(1:1 移植自 pixel-beads.com bead-grid-canvas,但默认走 pindou 原行为) ----
+// cellShape: 'square' 实心方,铺满整个网格(pindou 默认,也是真实拼豆图纸的样子)
+//           | 'round' 实心圆(pixel-beads 默认,圆与圆之间留缝,珠子渲染用)
+//           | 'hollow' 空心圆(线稿风)
+// gridLineWidth: 'none' 无 | 'small' 细 | 'big' 粗(对应 pixel-beads 的 0/1/3)
+// exportBackground: 'transparent' 透明 | 'cream' 米色 #F7F1E1(像素-珠 UI 配色)
+export let cellShape = 'square';
+export let gridLineWidth = 'small';
+export let exportBackground = 'cream';
+
+export function setCellShape(s) {
+    cellShape = s === 'round' || s === 'hollow' ? s : 'square';
+}
+export function setGridLineWidth(w) {
+    gridLineWidth = w === 'none' || w === 'big' ? w : 'small';
+}
+export function setExportBackground(b) {
+    exportBackground = b === 'transparent' ? 'transparent' : 'cream';
 }

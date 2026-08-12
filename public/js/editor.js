@@ -134,23 +134,30 @@ export function getRecentCodes(n) {
     }
     return out;
 }
-export function openPicker(row, col) {
+export function openPicker(row, col, prefill) {
     if (!lastMergedGrid) return;
     const cell = lastMergedGrid[row][col];
-    if (!cell || cell.transparent) return; // 透明格跳过
+    // 透明格:仅在有预填候选(scanner 错误格)时打开,让用户改色
+    const isBlank = !cell || cell.transparent;
+    if (isBlank && (!prefill || prefill.length === 0)) return;
 
     pickerActive.current = { row, col };
 
-    // 当前色
-    const code = getDisplayCode(cell);
+    // 当前色(空白格跳过 swatch 显示,只显示推荐候选)
     const codeEl = document.getElementById('editorCurrentCode');
     const swEl = document.getElementById('editorCurrentSwatch');
-    if (codeEl) codeEl.textContent = code;
-    if (swEl) swEl.style.backgroundColor = cell.hex;
+    if (isBlank) {
+        if (codeEl) codeEl.textContent = '—';
+        if (swEl) swEl.style.backgroundColor = '#cccccc';
+    } else {
+        const code = getDisplayCode(cell);
+        if (codeEl) codeEl.textContent = code;
+        if (swEl) swEl.style.backgroundColor = cell.hex;
+    }
 
-    // 相似色:8 个
+    // 相似色:8 个(空白格无当前色,跳过;用户在最近色 / 输入框选色即可)
     const simGrid = document.getElementById('editorSimilarGrid');
-    if (simGrid) {
+    if (simGrid && !isBlank) {
         simGrid.innerHTML = '';
         const sims = pickSimilarColors(cell, currentPalette, 8);
         for (const s of sims) {
@@ -192,10 +199,10 @@ export function openPicker(row, col) {
         }
     }
 
-    // 输入框 + 错误清空
+    // 输入框 + 错误清空(预填 scanner 候选色号,逗号分隔)
     const input = document.getElementById('editorCodeInput');
     const err = document.getElementById('editorCodeError');
-    if (input) input.value = '';
+    if (input) input.value = prefill && prefill.length > 0 ? prefill.join(', ') : '';
     if (err) err.style.display = 'none';
 
     // 显示 modal

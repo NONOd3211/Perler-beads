@@ -8,13 +8,17 @@ import {
     setPixelationMode,
     pixelBeadsPresetId,
     setPixelBeadsPresetId,
+    maxColorsOverride,
+    setMaxColorsOverride,
+    setPresampleFactor,
+    setCellShape,
+    setGridLineWidth,
+    setExportBackground,
     currentPalette,
     setPalette,
     setFuseEffect,
     lastMergedGrid,
     setLastMergedGrid,
-    lastPreMergeGrid,
-    setMergeThreshold,
     editorHistory,
     recentCodes,
     pickerActive,
@@ -36,12 +40,23 @@ import {
 import { getDisplayCode } from './color.js';
 import { applyColorChange, openPicker, closePicker, undo, redo } from './editor.js';
 import { generatePerlerGrid } from './generate.js';
-import { recomputePreservingRefine } from './render-bus.js';
 
 // ---- 文件处理(点击上传与拖拽上传共用) ----
 function isValidImageFile(file) {
     if (!file) return false;
     return typeof file.type === 'string' && file.type.indexOf('image/') === 0;
+}
+
+// ===== 脏状态(dirty)管理 =====
+// 设计:用户改任何参数后,网格会"过期",需要点"重新生成"才更新。
+// 用 markDirty() 标记过期,用 clearDirty() 在生成成功后清除。
+// 重新生成按钮旁边的小红点提示有未应用的更改。
+
+function markDirty() {
+    if (stateDom.dirtyDot) stateDom.dirtyDot.hidden = false;
+}
+function clearDirty() {
+    if (stateDom.dirtyDot) stateDom.dirtyDot.hidden = true;
 }
 
 async function handleFile(file, refs) {
@@ -52,6 +67,11 @@ async function handleFile(file, refs) {
     }
     setLastFileSize(file.size);
     stateDom.fileInfo.textContent = `已选择: ${file.name}`;
+    // 清理上一张图的选区 UI(如果还在的话),避免重复挂载
+    if (currentSelectionCtrl && typeof currentSelectionCtrl.destroy === 'function') {
+        try { currentSelectionCtrl.destroy(); } catch (_) {}
+        currentSelectionCtrl = null;
+    }
     const reader = new FileReader();
     reader.onload = function (e) {
         setCurrentImage(e.target.result);
@@ -63,23 +83,102 @@ async function handleFile(file, refs) {
             async function onImgLoad() {
                 stateDom.originalImage.removeEventListener('load', onImgLoad);
                 stateDom.originalImage.style.display = '';
+                // 新图上传 = 第一次生成时机,直接调 generatePerlerGrid
                 const { generatePerlerGrid } = await import('./generate.js');
                 generatePerlerGrid();
-                clearBgManualPoints();
-                setBgRemovalEnabled(false);
-                if (refs.bgEnabledChk) refs.bgEnabledChk.checked = false;
-                if (refs.bgModeGroup) refs.bgModeGroup.disabled = true;
-                if (refs.bgThresholdSlider) refs.bgThresholdSlider.disabled = true;
-                if (refs.sampleMatchThrSlider) refs.sampleMatchThrSlider.disabled = true;
-                stateDom.downloadButton.disabled = false;
-                stateDom.resetButton.disabled = false;
-                stateDom.fusedPreviewZoomButton.disabled = false;
+                clearDirty();
+                finalizeAfterLoad();
             },
             { once: true }
         );
         stateDom.originalImage.src = currentImage;
+
+        function finalizeAfterLoad() {
+            clearBgManualPoints();
+            setBgRemovalEnabled(false);
+            if (refs.bgEnabledChk) refs.bgEnabledChk.checked = false;
+            if (refs.bgModeGroup) refs.bgModeGroup.disabled = true;
+            if (refs.bgThresholdSlider) refs.bgThresholdSlider.disabled = true;
+            if (refs.sampleMatchThrSlider) refs.sampleMatchThrSlider.disabled = true;
+            stateDom.downloadButton.disabled = false;
+            stateDom.resetButton.disabled = false;
+            stateDom.fusedPreviewZoomButton.disabled = false;
+            if (stateDom.selectRangeButton) stateDom.selectRangeButton.disabled = false;
+            if (stateDom.regenerateButton) stateDom.regenerateButton.disabled = false;
+        }
     };
     reader.readAsDataURL(file);
+}
+
+// 跟踪当前激活的选区控制器(handleFile 内部 / reset / selectRange 入口清理)
+let currentSelectionCtrl = null;
+
+// "✂️ 自由选择生成范围" 按钮 — 显式触发选区裁剪
+async function enterSelectionMode() {
+    if (!currentImage) return;
+    if (currentSelectionCtrl && typeof currentSelectionCtrl.destroy === 'function') {
+        try { currentSelectionCtrl.destroy(); } catch (_) {}
+        currentSelectionCtrl = null;
+    }
+    const stage = stateDom.previewStage;
+    if (!stage) {
+        alert('找不到原图预览区域,无法启用选区。');
+        return;
+    }
+    if (stateDom.selectRangeButton) stateDom.selectRangeButton.disabled = true;
+    const { enableSelection } = await import('./image-cropper.js');
+    currentSelectionCtrl = enableSelection(stateDom.originalImage, stage, {
+        onConfirm: async (crop) => {
+            // 裁剪:用 canvas 把原图裁剪到 crop 区域,转 dataURL
+            currentSelectionCtrl = null;
+            const canvas = document.createElement('canvas');
+            canvas.width = crop.width;
+            canvas.height = crop.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(
+                stateDom.originalImage,
+                crop.x,
+                crop.y,
+                crop.width,
+                crop.height,
+                0,
+                0,
+                crop.width,
+                crop.height
+            );
+            // 触发再次 load,用裁剪后的 dataURL
+            const croppedDataUrl = canvas.toDataURL('image/png');
+            stateDom.originalImage.addEventListener(
+                'load',
+                function onCroppedLoad() {
+                    stateDom.originalImage.removeEventListener('load', onCroppedLoad);
+                    // 裁完图不自动生成 — 让用户点"重新生成"
+                    markDirty();
+                    if (stateDom.selectRangeButton) stateDom.selectRangeButton.disabled = false;
+                },
+                { once: true }
+            );
+            stateDom.originalImage.src = croppedDataUrl;
+        },
+        onSkip: () => {
+            // 取消:仅关闭选区 UI,不动图
+            currentSelectionCtrl = null;
+            if (stateDom.selectRangeButton) stateDom.selectRangeButton.disabled = false;
+        },
+    });
+}
+
+// "🔄 重新生成" 按钮 — 显式触发 generatePerlerGrid
+async function regenerate() {
+    if (!currentImage) return;
+    if (stateDom.regenerateButton) stateDom.regenerateButton.disabled = true;
+    try {
+        const { generatePerlerGrid } = await import('./generate.js');
+        generatePerlerGrid();
+        clearDirty();
+    } finally {
+        if (stateDom.regenerateButton) stateDom.regenerateButton.disabled = false;
+    }
 }
 
 // ---- 拖拽上传(document 级,拖到页面任意位置即可接收) ----
@@ -146,24 +245,44 @@ export function attachEventsListeners(win = window) {
         handleFile(file, bgRefs);
     });
 
-    // ---- density change handler(切换网格尺寸) ----
-    stateDom.densityOptions.forEach((option) => {
-        option.addEventListener('change', async function () {
+    // ---- grid size slider (1-120,默认 52) ----
+    const gridSizeSlider = doc.getElementById('gridSizeSlider');
+    const gridSizeValue = doc.getElementById('gridSizeValue');
+    const gridSizeHint = doc.getElementById('gridSizeHint');
+    function updateGridSizeLabel(v) {
+        if (gridSizeValue) gridSizeValue.textContent = v;
+        if (gridSizeHint) {
+            // 简化提示
+            const preset =
+                v == 52
+                    ? '52×52 标准格(单板)'
+                    : v == 104
+                    ? '104×104 精细格(4 块板拼接)'
+                    : `${v} 列(高度按图片比例自动算,单边最大 200 颗)`;
+            gridSizeHint.textContent = preset;
+        }
+    }
+    if (gridSizeSlider) {
+        updateGridSizeLabel(gridSizeSlider.value);
+        gridSizeSlider.addEventListener('input', function () {
+            updateGridSizeLabel(this.value);
+        });
+        gridSizeSlider.addEventListener('change', function () {
             if (currentImage && (editorHistory.length > 0 || recentCodes.length > 0)) {
                 if (!confirm('切换网格尺寸会丢失所有手动精修,是否继续?')) {
-                    // 取消 → 还原 radio 旧值
-                    const prev = doc.querySelector('input[name="density"]:checked');
-                    if (prev && prev !== this) prev.checked = true;
+                    // 取消 → 还原旧值
+                    const prev = this.dataset.lastValue || this.defaultValue;
+                    this.value = prev;
+                    updateGridSizeLabel(prev);
                     return;
                 }
                 clearManualRefine();
             }
-            if (currentImage) {
-                const { generatePerlerGrid } = await import('./generate.js');
-                generatePerlerGrid();
-            }
+            this.dataset.lastValue = this.value;
+            if (currentImage) markDirty();
         });
-    });
+        gridSizeSlider.dataset.lastValue = gridSizeSlider.value;
+    }
 
     // ---- palette change handler ----
     stateDom.paletteOptions.forEach((option) => {
@@ -172,7 +291,7 @@ export function attachEventsListeners(win = window) {
             const paletteValue = parseInt(this.value);
             const palette = await getPaletteById(paletteValue);
             setPalette(palette, paletteValue);
-            if (currentImage) recomputePreservingRefine('palette');
+            if (currentImage) markDirty();
         });
     });
 
@@ -281,6 +400,10 @@ export function attachEventsListeners(win = window) {
 
     // ---- reset button ----
     stateDom.resetButton.addEventListener('click', async function () {
+        if (currentSelectionCtrl && typeof currentSelectionCtrl.destroy === 'function') {
+            try { currentSelectionCtrl.destroy(); } catch (_) {}
+            currentSelectionCtrl = null;
+        }
         stateDom.fileInput.value = '';
         stateDom.originalImage.src = '';
         stateDom.originalImage.style.display = 'none';
@@ -292,6 +415,9 @@ export function attachEventsListeners(win = window) {
         stateDom.colorListButton.disabled = true;
         stateDom.resetButton.disabled = true;
         stateDom.fusedPreviewZoomButton.disabled = true;
+        if (stateDom.selectRangeButton) stateDom.selectRangeButton.disabled = true;
+        if (stateDom.regenerateButton) stateDom.regenerateButton.disabled = true;
+        clearDirty();
         setFuseEffect('plain');
         await syncFuseAfterReset();
         setCurrentImage(null);
@@ -300,11 +426,25 @@ export function attachEventsListeners(win = window) {
         setBgRemovalEnabled(false);
     });
 
+    // ---- "自由选择生成范围" 按钮 ----
+    if (stateDom.selectRangeButton) {
+        stateDom.selectRangeButton.addEventListener('click', () => {
+            enterSelectionMode();
+        });
+    }
+
+    // ---- "🔄 重新生成" 按钮 ----
+    if (stateDom.regenerateButton) {
+        stateDom.regenerateButton.addEventListener('click', () => {
+            regenerate();
+        });
+    }
+
     // ---- 像素化模式 select ----
     const pixelationModeSelect = doc.getElementById('pixelationModeSelect');
     const pixelBeadsPresetBlock = doc.getElementById('pixelBeadsPresetBlock');
     const pixelBeadsPresetSelect = doc.getElementById('pixelBeadsPresetSelect');
-    pixelationModeSelect.addEventListener('change', async function () {
+    pixelationModeSelect.addEventListener('change', function () {
         if (currentImage && (editorHistory.length > 0 || recentCodes.length > 0)) {
             if (!confirm('切换处理模式会丢失所有手动精修,是否继续?')) {
                 // 取消 → 还原 select 旧值
@@ -319,37 +459,87 @@ export function attachEventsListeners(win = window) {
         if (pixelBeadsPresetBlock) {
             pixelBeadsPresetBlock.style.display = newMode === 'pixel-beads' ? 'block' : 'none';
         }
-        if (currentImage) {
-            const { generatePerlerGrid } = await import('./generate.js');
-            generatePerlerGrid();
-        }
+        if (currentImage) markDirty();
     });
 
     // ---- pixel-beads 5 档预设 select ----
     if (pixelBeadsPresetSelect) {
-        pixelBeadsPresetSelect.addEventListener('change', async function () {
+        pixelBeadsPresetSelect.addEventListener('change', function () {
             setPixelBeadsPresetId(this.value);
-            if (currentImage) {
-                const { generatePerlerGrid } = await import('./generate.js');
-                generatePerlerGrid();
+            // 切预设时重置 maxColors 滑块到预设默认
+            setMaxColorsOverride(null);
+            if (stateDom.maxColorsSlider && stateDom.maxColorsValue) {
+                const presetDefaults = { legacy: 50, zippland: 50, simplified: 8, standard: 10, detailed: 16 };
+                const defaultVal = presetDefaults[this.value] ?? 16;
+                stateDom.maxColorsSlider.value = defaultVal;
+                stateDom.maxColorsValue.textContent = defaultVal;
             }
+            if (currentImage) markDirty();
         });
     }
 
-    // ---- merge slider(拖动时实时生效,边拖边重算) ----
-    // 旧版用 'change' 事件只在松开时才触发,所以感觉"没有实时"——其实只是延迟了
-    // 改用 'input' 事件,边拖边更新;同时改成统一由 input 触发
-    const mergeSlider = doc.getElementById('mergeSlider');
-    const mergeValueLabel = doc.getElementById('mergeValue');
-    function onMergeSliderChange() {
-        setMergeThreshold(+this.value);
-        mergeValueLabel.textContent = this.value;
-        if (currentImage && lastPreMergeGrid) {
-            recomputePreservingRefine('threshold');
-        }
+    // ---- 色彩数量滑块(覆盖预设默认) ----
+    const maxColorsSlider = doc.getElementById('maxColorsSlider');
+    const maxColorsValue = doc.getElementById('maxColorsValue');
+    if (maxColorsSlider) {
+        maxColorsSlider.addEventListener('input', function () {
+            const v = parseInt(this.value);
+            if (maxColorsValue) maxColorsValue.textContent = v;
+            setMaxColorsOverride(v);
+            if (currentImage) markDirty();
+        });
     }
-    mergeSlider.addEventListener('input', onMergeSliderChange);
-    mergeSlider.addEventListener('change', onMergeSliderChange);
+
+    // ---- 预采样倍率(关闭/2x/4x/8x) ----
+    if (stateDom.presampleFactorSelect) {
+        stateDom.presampleFactorSelect.addEventListener('change', function () {
+            setPresampleFactor(parseInt(this.value));
+            if (currentImage) markDirty();
+        });
+    }
+
+    // ---- 导出样式 3 控件(柔光感 1:1 移植自 pixel-beads.com) ----
+    // 改任一项都只是 markDirty,等用户点 🔄 重新生成才生效
+    if (stateDom.cellShapeSelect) {
+        stateDom.cellShapeSelect.addEventListener('change', function () {
+            setCellShape(this.value);
+            if (currentImage) markDirty();
+        });
+    }
+    if (stateDom.gridLineWidthSelect) {
+        stateDom.gridLineWidthSelect.addEventListener('change', function () {
+            setGridLineWidth(this.value);
+            if (currentImage) markDirty();
+        });
+    }
+    if (stateDom.exportBackgroundSelect) {
+        stateDom.exportBackgroundSelect.addEventListener('change', function () {
+            setExportBackground(this.value);
+            if (currentImage) markDirty();
+        });
+    }
+
+    // ---- 高级 preset radio 同步(从"高级"区域 radio 改值 → 触发 select change 流程) ----
+    // 普通用户只看到 select(zippland/legacy),但 advanced radio 选 simplified/standard/detailed
+    // 时也走 setPixelBeadsPresetId 路径
+    document.addEventListener('change', function (e) {
+        if (e.target && e.target.name === 'advancedPreset') {
+            const sel = stateDom.pixelBeadsPresetSelect;
+            if (sel) {
+                sel.value = e.target.value;
+                sel.dispatchEvent(new Event('change'));
+            }
+        }
+    });
+    // select 改变时,同步 radio 状态(单选互斥:zippland/legacy 时所有 radio uncheck)
+    if (stateDom.pixelBeadsPresetSelect) {
+        stateDom.pixelBeadsPresetSelect.addEventListener('change', function () {
+            const v = this.value;
+            document.querySelectorAll('input[name="advancedPreset"]').forEach((r) => {
+                r.checked = r.value === v;
+            });
+        });
+    }
 
     // ---- canvas 点击:manual bg 模式优先加采样点,否则打开选色浮窗 ----
     // v2:manual 模式点击在拼豆图纸上(不是原图),坐标用 col/row 而非 v1 的 nx/ny

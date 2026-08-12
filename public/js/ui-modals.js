@@ -6,7 +6,9 @@ import {
     lastCellSize,
     lastGridCols,
     lastGridRows,
+    scannerErrors,
 } from './state.js';
+import { drawScannerErrors, pruneScannerErrors } from './ui-scanner.js';
 
 const ZOOM_FIT_MARGIN = 0.95;
 const MIN_SCALE_RATIO = 0.25;
@@ -55,6 +57,8 @@ export function syncZoomCanvas() {
     ctx.clearRect(0, 0, zc.width, zc.height);
     ctx.drawImage(perlerCanvas, 0, 0);
     stateDom.zoomModeLabel.textContent = currentMode === 'fused' ? '成品预览' : '网格图';
+    // scanner 错误格红框(drawImage 后 rAF 追加,避免下次 clearRect 覆盖)
+    requestAnimationFrame(() => drawScannerErrors(ctx, lastCellSize));
 }
 
 export async function openZoomModal() {
@@ -95,8 +99,11 @@ export function attachModalsListeners() {
             const col = Math.floor(xInCanvas / cs);
             const row = Math.floor(yInCanvas / cs);
             if (row < 0 || row >= lastGridRows || col < 0 || col >= lastGridCols) return;
+            // scanner 错误格 → 把 candidates 作为 prefill 传给 picker
+            const errEntry = scannerErrors.find((e) => e.row === row && e.col === col);
+            const prefill = errEntry ? errEntry.candidates : undefined;
             const { openPicker } = await import('./editor.js');
-            openPicker(row, col);
+            openPicker(row, col, prefill);
         });
     }
     // editorDisplayObserver: editorModal 关闭后刷新 zoom canvas
@@ -109,6 +116,8 @@ export function attachModalsListeners() {
                 cur === 'none' &&
                 stateDom.zoomModal.style.display === 'flex'
             ) {
+                // 改色后过滤 scannerErrors 中已修正的格,再重绘红框
+                pruneScannerErrors();
                 syncZoomCanvas();
             }
             prevEditorDisplay = cur;

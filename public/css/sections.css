@@ -563,3 +563,40 @@
         flex: 1 1 100%;
     }
 }
+
+/* 扫描导入(scanner)模态框 — 限制 canvas 显示尺寸,避免撑爆 modal + 保证点击 1:1 精度 */
+.scanner-calibrate-area,
+.scanner-preview-area {
+    max-width: 100%;
+    overflow: auto;
+    display: flex;
+    justify-content: center;
+    margin: 12px 0;
+}
+.scanner-calibrate-area canvas,
+.scanner-preview-area canvas {
+    max-width: 600px;
+    max-height: 600px;
+    width: auto;
+    height: auto;
+    border: 1px solid var(--c-cream-border);
+    image-rendering: pixelated;
+}
+.scanner-step .scanner-fields {
+    display: flex;
+    gap: 12px;
+    margin: 12px 0;
+}
+.scanner-step .scanner-fields label {
+    display: flex;
+    flex-direction: column;
+    font-size: 13px;
+    gap: 4px;
+}
+.scanner-step .scanner-fields input {
+    width: 80px;
+    padding: 4px 8px;
+    border: 1px solid var(--c-cream-border);
+    border-radius: 4px;
+    font: inherit;
+}
