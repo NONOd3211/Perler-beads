@@ -497,3 +497,161 @@ canvas {
 .text-center {
     text-align: center;
 }
+
+/* === 图片裁剪 modal === */
+.modal-overlay--crop {
+    z-index: 10002;
+    flex-direction: column;
+}
+.modal-panel--crop {
+    max-width: 90vw;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+}
+.cropper-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+.cropper-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    line-height: 1;
+    color: var(--c-brown);
+    cursor: pointer;
+    padding: 0 8px;
+}
+.cropper-hint {
+    margin: 0 0 12px 0;
+    font-size: 11px;
+    color: var(--c-brown);
+}
+.cropper-stage {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #2a2a2a;
+    border-radius: 8px;
+    padding: 12px;
+    overflow: auto;
+    max-height: 65vh;
+}
+.cropper-stage canvas {
+    cursor: crosshair;
+    background: #fff;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+.cropper-coords {
+    margin: 12px 0;
+    font-size: 11px;
+    color: var(--c-brown);
+    font-family: monospace;
+}
+.cropper-coords span:first-child {
+    font-weight: bold;
+    color: var(--c-cream-deep);
+}
+.cropper-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+.cropper-footer button {
+    min-width: 80px;
+}
+.cropper-footer button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* === inline 选区 (在原图预览里) === */
+.preview-stage {
+    position: relative; /* 让 overlay canvas 绝对定位 */
+}
+.selection-canvas {
+    cursor: crosshair;
+    z-index: 10;
+    touch-action: none; /* 防止触屏滚动 */
+    background: transparent !important; /* 覆盖 .preview canvas 的 white 背景,否则会盖住原图 */
+    border: none !important; /* 也不需要 2px 边框 */
+}
+.selection-canvas:hover {
+    outline: 1px dashed rgba(22, 139, 125, 0.5);
+    outline-offset: -1px;
+}
+.selection-toolbar {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 11;
+    background: rgba(255, 255, 255, 0.97);
+    border: 1px solid var(--c-cream-border);
+    border-radius: 10px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+    white-space: nowrap;
+}
+.selection-toolbar .selection-view {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.selection-toolbar .selection-view[hidden] {
+    display: none;
+}
+.selection-toolbar .selection-prompt {
+    color: var(--c-cream-deep);
+    font-weight: bold;
+    font-size: 12px;
+    margin-right: 4px;
+}
+.selection-toolbar .selection-info {
+    color: var(--c-cream-deep);
+    font-weight: bold;
+    min-width: 100px;
+    font-family: monospace;
+    font-size: 10px;
+}
+.selection-toolbar button {
+    min-width: 64px;
+    padding: 5px 10px !important;
+    font-size: 12px !important;
+}
+.selection-toolbar .selection-use-full {
+    font-weight: bold;
+}
+.selection-toolbar button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* === 原始图片 header 按钮组 + 脏状态指示 === */
+.preview-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.dirty-dot {
+    color: #e74c3c;
+    font-size: 14px;
+    line-height: 1;
+    margin-left: 4px;
+    animation: dirty-pulse 1.5s ease-in-out infinite;
+}
+.dirty-dot[hidden] {
+    display: none;
+}
+@keyframes dirty-pulse {
+    0%, 100% { opacity: 0.55; }
+    50% { opacity: 1; }
+}

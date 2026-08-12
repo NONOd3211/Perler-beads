@@ -38,12 +38,23 @@ import {
 import { getDisplayCode } from './color.js';
 import { applyColorChange, openPicker, closePicker, undo, redo } from './editor.js';
 import { generatePerlerGrid } from './generate.js';
-import { recomputePreservingRefine } from './render-bus.js';
 
 // ---- 文件处理(点击上传与拖拽上传共用) ----
 function isValidImageFile(file) {
     if (!file) return false;
     return typeof file.type === 'string' && file.type.indexOf('image/') === 0;
+}
+
+// ===== 脏状态(dirty)管理 =====
+// 设计:用户改任何参数后,网格会"过期",需要点"重新生成"才更新。
+// 用 markDirty() 标记过期,用 clearDirty() 在生成成功后清除。
+// 重新生成按钮旁边的小红点提示有未应用的更改。
+
+function markDirty() {
+    if (stateDom.dirtyDot) stateDom.dirtyDot.hidden = false;
+}
+function clearDirty() {
+    if (stateDom.dirtyDot) stateDom.dirtyDot.hidden = true;
 }
 
 async function handleFile(file, refs) {
@@ -54,6 +65,11 @@ async function handleFile(file, refs) {
     }
     setLastFileSize(file.size);
     stateDom.fileInfo.textContent = `已选择: ${file.name}`;
+    // 清理上一张图的选区 UI(如果还在的话),避免重复挂载
+    if (currentSelectionCtrl && typeof currentSelectionCtrl.destroy === 'function') {
+        try { currentSelectionCtrl.destroy(); } catch (_) {}
+        currentSelectionCtrl = null;
+    }
     const reader = new FileReader();
     reader.onload = function (e) {
         setCurrentImage(e.target.result);
@@ -65,23 +81,102 @@ async function handleFile(file, refs) {
             async function onImgLoad() {
                 stateDom.originalImage.removeEventListener('load', onImgLoad);
                 stateDom.originalImage.style.display = '';
+                // 新图上传 = 第一次生成时机,直接调 generatePerlerGrid
                 const { generatePerlerGrid } = await import('./generate.js');
                 generatePerlerGrid();
-                clearBgManualPoints();
-                setBgRemovalEnabled(false);
-                if (refs.bgEnabledChk) refs.bgEnabledChk.checked = false;
-                if (refs.bgModeGroup) refs.bgModeGroup.disabled = true;
-                if (refs.bgThresholdSlider) refs.bgThresholdSlider.disabled = true;
-                if (refs.sampleMatchThrSlider) refs.sampleMatchThrSlider.disabled = true;
-                stateDom.downloadButton.disabled = false;
-                stateDom.resetButton.disabled = false;
-                stateDom.fusedPreviewZoomButton.disabled = false;
+                clearDirty();
+                finalizeAfterLoad();
             },
             { once: true }
         );
         stateDom.originalImage.src = currentImage;
+
+        function finalizeAfterLoad() {
+            clearBgManualPoints();
+            setBgRemovalEnabled(false);
+            if (refs.bgEnabledChk) refs.bgEnabledChk.checked = false;
+            if (refs.bgModeGroup) refs.bgModeGroup.disabled = true;
+            if (refs.bgThresholdSlider) refs.bgThresholdSlider.disabled = true;
+            if (refs.sampleMatchThrSlider) refs.sampleMatchThrSlider.disabled = true;
+            stateDom.downloadButton.disabled = false;
+            stateDom.resetButton.disabled = false;
+            stateDom.fusedPreviewZoomButton.disabled = false;
+            if (stateDom.selectRangeButton) stateDom.selectRangeButton.disabled = false;
+            if (stateDom.regenerateButton) stateDom.regenerateButton.disabled = false;
+        }
     };
     reader.readAsDataURL(file);
+}
+
+// 跟踪当前激活的选区控制器(handleFile 内部 / reset / selectRange 入口清理)
+let currentSelectionCtrl = null;
+
+// "✂️ 自由选择生成范围" 按钮 — 显式触发选区裁剪
+async function enterSelectionMode() {
+    if (!currentImage) return;
+    if (currentSelectionCtrl && typeof currentSelectionCtrl.destroy === 'function') {
+        try { currentSelectionCtrl.destroy(); } catch (_) {}
+        currentSelectionCtrl = null;
+    }
+    const stage = stateDom.previewStage;
+    if (!stage) {
+        alert('找不到原图预览区域,无法启用选区。');
+        return;
+    }
+    if (stateDom.selectRangeButton) stateDom.selectRangeButton.disabled = true;
+    const { enableSelection } = await import('./image-cropper.js');
+    currentSelectionCtrl = enableSelection(stateDom.originalImage, stage, {
+        onConfirm: async (crop) => {
+            // 裁剪:用 canvas 把原图裁剪到 crop 区域,转 dataURL
+            currentSelectionCtrl = null;
+            const canvas = document.createElement('canvas');
+            canvas.width = crop.width;
+            canvas.height = crop.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(
+                stateDom.originalImage,
+                crop.x,
+                crop.y,
+                crop.width,
+                crop.height,
+                0,
+                0,
+                crop.width,
+                crop.height
+            );
+            // 触发再次 load,用裁剪后的 dataURL
+            const croppedDataUrl = canvas.toDataURL('image/png');
+            stateDom.originalImage.addEventListener(
+                'load',
+                function onCroppedLoad() {
+                    stateDom.originalImage.removeEventListener('load', onCroppedLoad);
+                    // 裁完图不自动生成 — 让用户点"重新生成"
+                    markDirty();
+                    if (stateDom.selectRangeButton) stateDom.selectRangeButton.disabled = false;
+                },
+                { once: true }
+            );
+            stateDom.originalImage.src = croppedDataUrl;
+        },
+        onSkip: () => {
+            // 取消:仅关闭选区 UI,不动图
+            currentSelectionCtrl = null;
+            if (stateDom.selectRangeButton) stateDom.selectRangeButton.disabled = false;
+        },
+    });
+}
+
+// "🔄 重新生成" 按钮 — 显式触发 generatePerlerGrid
+async function regenerate() {
+    if (!currentImage) return;
+    if (stateDom.regenerateButton) stateDom.regenerateButton.disabled = true;
+    try {
+        const { generatePerlerGrid } = await import('./generate.js');
+        generatePerlerGrid();
+        clearDirty();
+    } finally {
+        if (stateDom.regenerateButton) stateDom.regenerateButton.disabled = false;
+    }
 }
 
 // ---- 拖拽上传(document 级,拖到页面任意位置即可接收) ----
@@ -148,24 +243,44 @@ export function attachEventsListeners(win = window) {
         handleFile(file, bgRefs);
     });
 
-    // ---- density change handler(切换网格尺寸) ----
-    stateDom.densityOptions.forEach((option) => {
-        option.addEventListener('change', async function () {
+    // ---- grid size slider (1-120,默认 52) ----
+    const gridSizeSlider = doc.getElementById('gridSizeSlider');
+    const gridSizeValue = doc.getElementById('gridSizeValue');
+    const gridSizeHint = doc.getElementById('gridSizeHint');
+    function updateGridSizeLabel(v) {
+        if (gridSizeValue) gridSizeValue.textContent = v;
+        if (gridSizeHint) {
+            // 简化提示
+            const preset =
+                v == 52
+                    ? '52×52 标准格(单板)'
+                    : v == 104
+                    ? '104×104 精细格(4 块板拼接)'
+                    : `${v} 列(高度按图片比例自动算,单边最大 200 颗)`;
+            gridSizeHint.textContent = preset;
+        }
+    }
+    if (gridSizeSlider) {
+        updateGridSizeLabel(gridSizeSlider.value);
+        gridSizeSlider.addEventListener('input', function () {
+            updateGridSizeLabel(this.value);
+        });
+        gridSizeSlider.addEventListener('change', function () {
             if (currentImage && (editorHistory.length > 0 || recentCodes.length > 0)) {
                 if (!confirm('切换网格尺寸会丢失所有手动精修,是否继续?')) {
-                    // 取消 → 还原 radio 旧值
-                    const prev = doc.querySelector('input[name="density"]:checked');
-                    if (prev && prev !== this) prev.checked = true;
+                    // 取消 → 还原旧值
+                    const prev = this.dataset.lastValue || this.defaultValue;
+                    this.value = prev;
+                    updateGridSizeLabel(prev);
                     return;
                 }
                 clearManualRefine();
             }
-            if (currentImage) {
-                const { generatePerlerGrid } = await import('./generate.js');
-                generatePerlerGrid();
-            }
+            this.dataset.lastValue = this.value;
+            if (currentImage) markDirty();
         });
-    });
+        gridSizeSlider.dataset.lastValue = gridSizeSlider.value;
+    }
 
     // ---- palette change handler ----
     stateDom.paletteOptions.forEach((option) => {
@@ -174,7 +289,7 @@ export function attachEventsListeners(win = window) {
             const paletteValue = parseInt(this.value);
             const palette = await getPaletteById(paletteValue);
             setPalette(palette, paletteValue);
-            if (currentImage) recomputePreservingRefine('palette');
+            if (currentImage) markDirty();
         });
     });
 
@@ -283,6 +398,10 @@ export function attachEventsListeners(win = window) {
 
     // ---- reset button ----
     stateDom.resetButton.addEventListener('click', async function () {
+        if (currentSelectionCtrl && typeof currentSelectionCtrl.destroy === 'function') {
+            try { currentSelectionCtrl.destroy(); } catch (_) {}
+            currentSelectionCtrl = null;
+        }
         stateDom.fileInput.value = '';
         stateDom.originalImage.src = '';
         stateDom.originalImage.style.display = 'none';
@@ -294,6 +413,9 @@ export function attachEventsListeners(win = window) {
         stateDom.colorListButton.disabled = true;
         stateDom.resetButton.disabled = true;
         stateDom.fusedPreviewZoomButton.disabled = true;
+        if (stateDom.selectRangeButton) stateDom.selectRangeButton.disabled = true;
+        if (stateDom.regenerateButton) stateDom.regenerateButton.disabled = true;
+        clearDirty();
         setFuseEffect('plain');
         await syncFuseAfterReset();
         setCurrentImage(null);
@@ -302,11 +424,25 @@ export function attachEventsListeners(win = window) {
         setBgRemovalEnabled(false);
     });
 
+    // ---- "自由选择生成范围" 按钮 ----
+    if (stateDom.selectRangeButton) {
+        stateDom.selectRangeButton.addEventListener('click', () => {
+            enterSelectionMode();
+        });
+    }
+
+    // ---- "🔄 重新生成" 按钮 ----
+    if (stateDom.regenerateButton) {
+        stateDom.regenerateButton.addEventListener('click', () => {
+            regenerate();
+        });
+    }
+
     // ---- 像素化模式 select ----
     const pixelationModeSelect = doc.getElementById('pixelationModeSelect');
     const pixelBeadsPresetBlock = doc.getElementById('pixelBeadsPresetBlock');
     const pixelBeadsPresetSelect = doc.getElementById('pixelBeadsPresetSelect');
-    pixelationModeSelect.addEventListener('change', async function () {
+    pixelationModeSelect.addEventListener('change', function () {
         if (currentImage && (editorHistory.length > 0 || recentCodes.length > 0)) {
             if (!confirm('切换处理模式会丢失所有手动精修,是否继续?')) {
                 // 取消 → 还原 select 旧值
@@ -321,15 +457,12 @@ export function attachEventsListeners(win = window) {
         if (pixelBeadsPresetBlock) {
             pixelBeadsPresetBlock.style.display = newMode === 'pixel-beads' ? 'block' : 'none';
         }
-        if (currentImage) {
-            const { generatePerlerGrid } = await import('./generate.js');
-            generatePerlerGrid();
-        }
+        if (currentImage) markDirty();
     });
 
     // ---- pixel-beads 5 档预设 select ----
     if (pixelBeadsPresetSelect) {
-        pixelBeadsPresetSelect.addEventListener('change', async function () {
+        pixelBeadsPresetSelect.addEventListener('change', function () {
             setPixelBeadsPresetId(this.value);
             // 切预设时重置 maxColors 滑块到预设默认
             setMaxColorsOverride(null);
@@ -339,10 +472,7 @@ export function attachEventsListeners(win = window) {
                 stateDom.maxColorsSlider.value = defaultVal;
                 stateDom.maxColorsValue.textContent = defaultVal;
             }
-            if (currentImage) {
-                const { generatePerlerGrid } = await import('./generate.js');
-                generatePerlerGrid();
-            }
+            if (currentImage) markDirty();
         });
     }
 

@@ -10,6 +10,7 @@ export function attachCore(win = window) {
     const domRefs = {
         fileInput: win.document.getElementById('fileInput'),
         originalImage: win.document.getElementById('originalImage'),
+        previewStage: win.document.querySelector('.preview-stage'),
         perlerCanvas: win.document.getElementById('perlerCanvas'),
         exportCanvas: win.document.getElementById('exportCanvas'),
         downloadButton: win.document.getElementById('downloadButton'),
@@ -25,6 +26,9 @@ export function attachCore(win = window) {
         loadingOverlay: win.document.getElementById('loadingOverlay'),
         loadingProgress: win.document.getElementById('loadingProgress'),
         fusedPreviewZoomButton: win.document.getElementById('fusedPreviewZoomButton'),
+        selectRangeButton: win.document.getElementById('selectRangeButton'),
+        regenerateButton: win.document.getElementById('regenerateButton'),
+        dirtyDot: win.document.querySelector('#regenerateButton .dirty-dot'),
         zoomModal: win.document.getElementById('zoomModal'),
         zoomCanvas: win.document.getElementById('zoomCanvas'),
         zoomModeLabel: win.document.getElementById('zoomModeLabel'),

@@ -8,6 +8,7 @@ import { attachModeListeners } from './ui-mode.js';
 import { attachFuseListeners } from './ui-fuse.js';
 import { attachModalsListeners } from './ui-modals.js';
 import { attachEventsListeners } from './ui-events.js';
+import { attachScannerListeners } from './ui-scanner.js';
 
 // 浏览器环境守卫 — vitest jsdom 未加载 index.html,document.getElementById('fileInput') 为 null → 跳过
 // 渲染调度(repaintCurrentMode / recomputePreservingRefine)现由 render-bus.js 静态提供,
@@ -18,4 +19,5 @@ if (typeof document !== 'undefined' && document.getElementById('fileInput')) {
     attachFuseListeners();
     attachModalsListeners();
     attachEventsListeners();
+    attachScannerListeners();
 }

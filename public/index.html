@@ -27,15 +27,28 @@
         </div>
 
         <div class="section-card density-section">
-            <h3 class="section-title"><span class="icon">🔲</span>网格尺寸</h3>
-            <label class="density-option">
-                <input type="radio" name="density" value="52" checked>
-                52×52 标准格
+            <h3 class="section-title"><span class="icon">🔲</span>网格尺寸(横向)</h3>
+            <label
+                for="gridSizeSlider"
+                style="font-size: 10px; font-weight: bold; color: #5a4738; display: flex; justify-content: space-between; margin-bottom: 4px;"
+            >
+                <span>每行颗数</span>
+                <span id="gridSizeValue">52</span>
             </label>
-            <label class="density-option">
-                <input type="radio" name="density" value="104">
-                104×104 精细格
-            </label>
+            <input
+                type="range"
+                id="gridSizeSlider"
+                min="1"
+                max="120"
+                step="1"
+                value="52"
+                style="width: 100%; accent-color: #168b7d;"
+            />
+            <small
+                id="gridSizeHint"
+                style="display: block; margin-top: 4px; font-size: 10px; color: #5a4738;"
+                >52×52 标准格(高度按图片比例自动算,单边最大 200 颗)</small
+            >
         </div>
 
         <div class="section-card pixelation-section">
@@ -116,12 +129,6 @@
                         <span class="bg-hint">在右侧拼豆图纸上点击背景 cell</span>
                     </div>
                 </div>
-
-                <div class="section-card merge-section" style="margin: 0;">
-                    <h3 class="section-title"><span class="icon">🔀</span>颜色合并阈值: <span id="mergeValue">0</span></h3>
-                    <input type="range" id="mergeSlider" min="0" max="100" step="1" value="0">
-                    <small>值越大色块越纯净，细节越少。0 = 不合并(只靠去斑清理噪声)。</small>
-                </div>
             </div>
         </details>
 
@@ -155,7 +162,13 @@
 
         <div class="preview-section">
             <div class="preview">
-                <h3><span class="icon">🖼️</span>原始图片</h3>
+                <div class="preview-header">
+                    <h3><span class="icon">🖼️</span>原始图片</h3>
+                    <div class="preview-header-actions">
+                        <button id="selectRangeButton" class="btn-cream" disabled title="在原图上拖动鼠标自由框选要生成的范围">✂️ 自由选择生成范围</button>
+                        <button id="regenerateButton" class="btn-primary" disabled title="应用当前所有参数,重新生成拼豆图纸">🔄 重新生成<span class="dirty-dot" hidden>●</span></button>
+                    </div>
+                </div>
                 <div class="preview-stage">
                     <img id="originalImage" src="" alt="原始图片">
                     <div class="preview-placeholder">📷</div>
