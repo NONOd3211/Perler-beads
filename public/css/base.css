@@ -2,15 +2,56 @@
 
 /* === 设计 token === */
 :root {
+    /* 颜色 */
     --c-primary: #ff6b6b; /* 主色（红粉） */
     --c-primary-dark: #e55555; /* 主色深 - hover/active */
     --c-primary-soft: #ffe6e6; /* 主色浅 - 背景点缀 */
     --c-cream: #fffaf0; /* 米色 - 卡片背景 */
     --c-cream-deep: #ffe6cc; /* 米色深 - 边框/装饰 */
+    --c-cream-soft: #f7f1e1; /* 米色变体(比 cream 深,用于 input 背景) */
     --c-cream-border: #ffd9b3; /* 米色边框 */
     --c-text: #333; /* 主文字 */
     --c-text-sub: #666; /* 次文字 */
     --c-text-mute: #999; /* 淡文字 */
+    --c-text-warm: #5a4738; /* 暖色主文字(字段 label) - 跟米色调搭配 */
+    --c-text-warm-sub: #8a7768; /* 暖色次要文字(字段 hint) */
+
+    /* 字体 */
+    --ff-pixel: 'Press Start 2P', cursive;
+    --ff-body: 'Comic Neue', cursive;
+
+    /* 字号 (type scale) */
+    --fs-100: 9px; /* tiny hint */
+    --fs-200: 10px; /* field label */
+    --fs-300: 11px; /* field select/option */
+    --fs-400: 12px; /* section hint / btn-cream--sm */
+    --fs-500: 13px; /* btn-cream / 字段 row */
+    --fs-600: 14px; /* section title / 主 select / 字段 body */
+    --fs-700: 15px; /* 主 button */
+    --fs-800: clamp(20px, 4.5vw, 32px); /* h1 */
+
+    /* 间距 (4 起步,5 步进) */
+    --sp-1: 2px;
+    --sp-2: 4px;
+    --sp-3: 6px;
+    --sp-4: 8px;
+    --sp-5: 10px;
+    --sp-6: 12px;
+    --sp-7: 14px;
+    --sp-8: 16px;
+    --sp-10: 20px;
+
+    /* 圆角 */
+    --r-sm: 4px; /* 小输入框/小按钮 */
+    --r-md: 6px; /* 字段 select(cream 背景) / 字段 button */
+    --r-lg: 8px; /* 主 select / 主 button / 选项卡 */
+    --r-xl: 12px; /* 卡片 */
+
+    /* 边框 */
+    --bw-1: 1px;
+    --bw-2: 2px;
+
+    /* 阴影 */
     --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.08);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
@@ -402,4 +443,123 @@ body.dragging-file .drop-zone {
 body.dragging-file .drop-zone-hint {
     opacity: 1;
     color: var(--c-primary-dark);
+}
+
+/* === 通用表单字段(替代散落 inline style) === */
+/* 用法:.field 包一组 label + control + hint */
+.field {
+    margin-top: var(--sp-5);
+}
+.field + .field {
+    margin-top: var(--sp-5);
+}
+.field:first-child {
+    margin-top: 0;
+}
+
+/* 字段 label(块级,带"图标 + 标题") */
+.field-label {
+    display: block;
+    font-size: var(--fs-200);
+    font-weight: bold;
+    color: var(--c-text-warm);
+    margin-bottom: var(--sp-2);
+}
+
+/* 字段 label(行级,带 "标题 + 数值",如 "每行颗数  52") */
+.field-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: var(--fs-200);
+    font-weight: bold;
+    color: var(--c-text-warm);
+    margin-bottom: var(--sp-2);
+}
+
+.field-label-row .field-label-value {
+    font-weight: bold;
+    color: var(--c-text-warm);
+    font-family: var(--ff-body);
+}
+
+/* 字段 hint(块级,在 control 下方说明) */
+.field-hint {
+    display: block;
+    margin-top: var(--sp-2);
+    font-size: var(--fs-100);
+    color: var(--c-text-warm-sub);
+    line-height: 1.45;
+}
+
+.field-hint--lg {
+    font-size: var(--fs-200);
+    color: var(--c-text-warm);
+}
+
+/* === 字段 select(主推风格) === */
+/* 跟 .field-label / .field-hint 配套使用,白底 + 细米色边 */
+.field-select {
+    width: 100%;
+    padding: 4px 6px;
+    font-size: var(--fs-300);
+    font-family: var(--ff-body);
+    color: var(--c-text-warm);
+    background: white;
+    border: var(--bw-1) solid var(--c-cream-border);
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+}
+
+.field-select:hover,
+.field-select:focus {
+    border-color: var(--c-primary);
+    outline: none;
+}
+
+/* 字段 select 米色背景变体(像素-珠 preset 用) */
+.field-select--cream {
+    background: var(--c-cream-soft);
+    border: none;
+    border-radius: var(--r-md);
+    padding: 4px 8px;
+    font-size: var(--fs-300);
+}
+
+/* 字段 radio 行(高级 preset 折叠区域) */
+.field-radio-row {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    font-size: var(--fs-200);
+    color: var(--c-text-warm);
+    cursor: pointer;
+    padding: 2px 0;
+}
+.field-radio-row input[type='radio'] {
+    margin: 0;
+}
+
+/* 字段 range(字段里的滑块) */
+.field-range {
+    width: 100%;
+    accent-color: var(--c-primary);
+}
+
+/* 高级 preset 折叠容器 */
+.field-advanced {
+    margin-top: var(--sp-3);
+}
+.field-advanced > summary {
+    font-size: var(--fs-200);
+    color: var(--c-text-warm);
+    cursor: pointer;
+    user-select: none;
+}
+.field-advanced-body {
+    margin-top: var(--sp-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
 }

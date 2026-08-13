@@ -28,110 +28,87 @@
 
         <div class="section-card density-section">
             <h3 class="section-title"><span class="icon">🔲</span>网格尺寸(横向)</h3>
-            <label
-                for="gridSizeSlider"
-                style="font-size: 10px; font-weight: bold; color: #5a4738; display: flex; justify-content: space-between; margin-bottom: 4px;"
-            >
+            <label for="gridSizeSlider" class="field-label-row">
                 <span>每行颗数</span>
-                <span id="gridSizeValue">52</span>
+                <span id="gridSizeValue" class="field-label-value">52</span>
             </label>
             <input
                 type="range"
                 id="gridSizeSlider"
+                class="field-range"
                 min="1"
                 max="120"
                 step="1"
                 value="52"
-                style="width: 100%; accent-color: #168b7d;"
             />
-            <small
-                id="gridSizeHint"
-                style="display: block; margin-top: 4px; font-size: 10px; color: #5a4738;"
+            <small id="gridSizeHint" class="field-hint field-hint--lg"
                 >52×52 标准格(高度按图片比例自动算,单边最大 200 颗)</small
             >
         </div>
 
         <div class="section-card pixelation-section">
             <h3 class="section-title"><span class="icon">⚙️</span>处理模式</h3>
-            <select id="pixelationModeSelect">
+            <select id="pixelationModeSelect" class="select--primary">
                 <option value="dominant" selected>卡通 (主色)</option>
                 <option value="alpha-weighted">真实 (α-加权)</option>
                 <option value="pixel-beads">细节优先 (1:1 移植 pixel-beads.com)</option>
             </select>
             <p class="section-hint">卡通/真实 适合插画/写实;细节优先 对齐 pixel-beads.com 算法(K-means 聚类 + 暗部强制最暗)。</p>
-            <div id="pixelBeadsPresetBlock" style="display: none; margin-top: 8px;">
-                <label
-                    for="pixelBeadsPresetSelect"
-                    style="font-size: 10px; font-weight: bold; color: #5a4738; display: block; margin-bottom: 4px;"
-                    >图纸风格</label
-                >
-                <select id="pixelBeadsPresetSelect" style="width: 100%; padding: 4px 8px; border-radius: 6px; border: none; background: #f7f1e1; font-size: 11px;">
-                    <option value="zippland" selected title="pixel-beads.com 当前默认。不识别 outline/背景,不强制最暗(推荐)">zippland · 细节优先(pixel-beads 当前默认)</option>
-                    <option value="legacy" title="基本不识别轮廓,效果接近原卡通模式">legacy · 旧版兼容</option>
-                </select>
-                <small style="display: block; margin-top: 2px; font-size: 9px; color: #8a7768;"
-                    >其余 3 档(启用 background BFS / outline 强制最暗 / 去斑)仅适合线稿/纯色块图,真实照片会失真。需要时点下方"高级"展开。</small
-                >
-                <details style="margin-top: 6px;">
-                    <summary style="font-size: 10px; color: #5a4738; cursor: pointer; user-select: none;"
-                        >⚠️ 高级 preset(实验,可能偏深)</summary
+            <div id="pixelBeadsPresetBlock" class="field-advanced-body" hidden>
+                <div class="field">
+                    <label for="pixelBeadsPresetSelect" class="field-label">图纸风格</label>
+                    <select id="pixelBeadsPresetSelect" class="field-select field-select--cream">
+                        <option value="zippland" selected title="pixel-beads.com 当前默认。不识别 outline/背景,不强制最暗(推荐)">zippland · 细节优先(pixel-beads 当前默认)</option>
+                        <option value="legacy" title="基本不识别轮廓,效果接近原卡通模式">legacy · 旧版兼容</option>
+                    </select>
+                    <small class="field-hint"
+                        >其余 3 档(启用 background BFS / outline 强制最暗 / 去斑)仅适合线稿/纯色块图,真实照片会失真。需要时点下方"高级"展开。</small
                     >
-                    <div style="margin-top: 6px; display: flex; flex-direction: column; gap: 4px;">
-                        <label style="font-size: 10px; color: #5a4738; display: flex; align-items: center; gap: 6px;">
-                            <input type="radio" name="advancedPreset" value="simplified">
-                            <span>simplified · 8 色精炼</span>
-                        </label>
-                        <label style="font-size: 10px; color: #5a4738; display: flex; align-items: center; gap: 6px;">
-                            <input type="radio" name="advancedPreset" value="standard">
-                            <span>standard · 10 色标准</span>
-                        </label>
-                        <label style="font-size: 10px; color: #5a4738; display: flex; align-items: center; gap: 6px;">
-                            <input type="radio" name="advancedPreset" value="detailed">
-                            <span>detailed · 16 色细节</span>
-                        </label>
-                    </div>
-                </details>
-                <div style="margin-top: 10px;">
-                    <label
-                        for="maxColorsSlider"
-                        style="font-size: 10px; font-weight: bold; color: #5a4738; display: flex; justify-content: space-between; margin-bottom: 4px;"
-                    >
+                    <details class="field-advanced">
+                        <summary>⚠️ 高级 preset(实验,可能偏深)</summary>
+                        <div class="field-advanced-body">
+                            <label class="field-radio-row">
+                                <input type="radio" name="advancedPreset" value="simplified">
+                                <span>simplified · 8 色精炼</span>
+                            </label>
+                            <label class="field-radio-row">
+                                <input type="radio" name="advancedPreset" value="standard">
+                                <span>standard · 10 色标准</span>
+                            </label>
+                            <label class="field-radio-row">
+                                <input type="radio" name="advancedPreset" value="detailed">
+                                <span>detailed · 16 色细节</span>
+                            </label>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="field">
+                    <label for="maxColorsSlider" class="field-label-row">
                         <span>色彩数量</span>
-                        <span id="maxColorsValue">16</span>
+                        <span id="maxColorsValue" class="field-label-value">16</span>
                     </label>
                     <input
                         type="range"
                         id="maxColorsSlider"
+                        class="field-range"
                         min="4"
                         max="50"
                         step="1"
                         value="16"
-                        style="width: 100%; accent-color: #168b7d;"
                     />
-                    <small style="display: block; margin-top: 2px; font-size: 9px; color: #8a7768;"
-                        >覆盖预设默认,值越大颜色越丰富(改预设会重置为预设值)。</small
-                    >
+                    <small class="field-hint">覆盖预设默认,值越大颜色越丰富(改预设会重置为预设值)。</small>
                 </div>
 
-                <div style="margin-top: 10px;">
-                    <label
-                        for="presampleFactorSelect"
-                        style="font-size: 10px; font-weight: bold; color: #5a4738; display: flex; justify-content: space-between; margin-bottom: 4px;"
-                    >
-                        <span>预采样倍率</span>
-                    </label>
-                    <select
-                        id="presampleFactorSelect"
-                        style="width: 100%; padding: 4px 6px; font-size: 11px; border: 1px solid var(--c-cream-border); border-radius: 4px; background: white; color: #5a4738;"
-                    >
+                <div class="field">
+                    <label for="presampleFactorSelect" class="field-label">预采样倍率</label>
+                    <select id="presampleFactorSelect" class="field-select">
                         <option value="1">关闭 (原图)</option>
                         <option value="2">2x (轻度)</option>
                         <option value="4" selected>4x (推荐)</option>
                         <option value="8">8x (强)</option>
                     </select>
-                    <small style="display: block; margin-top: 2px; font-size: 9px; color: #8a7768;"
-                        >先用最近邻把图片降到小尺寸再识别颜色,避免 cell 平均把抗锯齿中间色混进结果。</small
-                    >
+                    <small class="field-hint">先用最近邻把图片降到小尺寸再识别颜色,避免 cell 平均把抗锯齿中间色混进结果。</small>
                 </div>
             </div>
         </div>
@@ -140,61 +117,38 @@
             <h3 class="section-title"><span class="icon">✨</span>导出样式</h3>
             <p class="section-hint">米色背景 + 文字阴影来自 pixel-beads.com,珠子形状默认走 pindou 原行为(铺满方格,真实拼豆图纸的样子)。改完点 🔄 重新生成。</p>
 
-            <div style="margin-bottom: 10px;">
-                <label
-                    for="cellShapeSelect"
-                    style="font-size: 10px; font-weight: bold; color: #5a4738; display: block; margin-bottom: 4px;"
-                    >珠子形状</label
-                >
-                <select
-                    id="cellShapeSelect"
-                    style="width: 100%; padding: 4px 6px; font-size: 11px; border: 1px solid var(--c-cream-border); border-radius: 4px; background: white; color: #5a4738;"
-                >
+            <div class="field">
+                <label for="cellShapeSelect" class="field-label">珠子形状</label>
+                <select id="cellShapeSelect" class="field-select">
                     <option value="square" selected>方块(铺满,默认)</option>
                     <option value="round">圆珠(柔光感)</option>
                     <option value="hollow">空心圆(线稿风)</option>
                 </select>
             </div>
 
-            <div style="margin-bottom: 10px;">
-                <label
-                    for="gridLineWidthSelect"
-                    style="font-size: 10px; font-weight: bold; color: #5a4738; display: block; margin-bottom: 4px;"
-                    >网格线</label
-                >
-                <select
-                    id="gridLineWidthSelect"
-                    style="width: 100%; padding: 4px 6px; font-size: 11px; border: 1px solid var(--c-cream-border); border-radius: 4px; background: white; color: #5a4738;"
-                >
+            <div class="field">
+                <label for="gridLineWidthSelect" class="field-label">网格线</label>
+                <select id="gridLineWidthSelect" class="field-select">
                     <option value="none">无(最柔)</option>
                     <option value="small" selected>细(推荐)</option>
                     <option value="big">粗(原 pindou)</option>
                 </select>
             </div>
 
-            <div>
-                <label
-                    for="exportBackgroundSelect"
-                    style="font-size: 10px; font-weight: bold; color: #5a4738; display: block; margin-bottom: 4px;"
-                    >导出背景</label
-                >
-                <select
-                    id="exportBackgroundSelect"
-                    style="width: 100%; padding: 4px 6px; font-size: 11px; border: 1px solid var(--c-cream-border); border-radius: 4px; background: white; color: #5a4738;"
-                >
+            <div class="field">
+                <label for="exportBackgroundSelect" class="field-label">导出背景</label>
+                <select id="exportBackgroundSelect" class="field-select">
                     <option value="cream" selected>米色 #F7F1E1(柔光推荐)</option>
                     <option value="transparent">透明 PNG</option>
                 </select>
-                <small style="display: block; margin-top: 4px; font-size: 9px; color: #8a7768;"
-                    >米色 = pixel-beads 视觉,圆珠放米色上整体最柔;透明 = 方便后期合成到其他背景。</small
-                >
+                <small class="field-hint">米色 = pixel-beads 视觉,圆珠放米色上整体最柔;透明 = 方便后期合成到其他背景。</small>
             </div>
         </div>
 
         <details class="advanced-settings">
             <summary>高级设置 · 去背景 / 颜色合并</summary>
             <div class="advanced-body">
-                <div class="section-card bg-removal-section" style="margin: 0 0 12px 0;">
+                <div class="section-card bg-removal-section">
                     <h3 class="section-title"><span class="icon">🪄</span>去背景</h3>
 
                     <label class="bg-toggle-row">

@@ -290,23 +290,24 @@
     text-align: left;
 }
 
-/* 处理模式：select */
-.pixelation-section select {
+/* 处理模式:select (主 select — 与 .field-select 二选一) */
+/* 用 .select--primary class 显式标记,避免被 .field-select 的子选择器意外覆盖 */
+.select--primary {
     width: 100%;
     max-width: 320px;
     padding: 8px 12px;
-    font-family: inherit;
-    font-size: 14px;
-    border: 2px solid var(--c-cream-border);
-    border-radius: 8px;
+    font-family: var(--ff-body);
+    font-size: var(--fs-600);
+    border: var(--bw-2) solid var(--c-cream-border);
+    border-radius: var(--r-lg);
     background-color: var(--c-cream);
     color: var(--c-text);
     cursor: pointer;
     transition: border-color 0.2s ease;
 }
 
-.pixelation-section select:hover,
-.pixelation-section select:focus {
+.select--primary:hover,
+.select--primary:focus {
     border-color: var(--c-primary);
     outline: none;
 }
@@ -535,10 +536,10 @@
         padding: 12px 14px;
         font-size: 12px;
     }
-    .pixelation-section select {
+    .select--primary {
         max-width: 100%;
         min-height: 40px;
-        font-size: 13px;
+        font-size: var(--fs-500);
     }
     .brand-option,
     .palette-option {

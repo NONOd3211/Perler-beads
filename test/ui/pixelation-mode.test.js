@@ -50,6 +50,6 @@ describe('pixelationModeSelect', () => {
     });
 
     it('select id 应保留 pixelationModeSelect', () => {
-        expect(html).toMatch(/<select\s+id="pixelationModeSelect">/);
+        expect(html).toMatch(/<select\s+id="pixelationModeSelect"[^>]*>/);
     });
 });
